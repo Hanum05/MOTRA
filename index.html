@@ -1,0 +1,1274 @@
+<!DOCTYPE html>
+<html lang="id" data-theme="system">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>MOTRA | Sistem Keamanan Sepeda Motor Cerdas</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Manrope:wght@500;700;800&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            /* Light Mode (Default) */
+            --bg-color: #F5F7F6;
+            --surface-color: #FFFFFF;
+            --surface-elevated: #EEF3F1;
+            --primary: #328F70;
+            --primary-soft: #DCEFE8;
+            --primary-hover: #297a5f;
+            --text-main: #17221F;
+            --text-sec: #64736E;
+            --border-color: #DCE4E1;
+            
+            /* Status Colors */
+            --status-safe: #328F70;
+            --status-warn: #B77920;
+            --status-danger: #C75454;
+            --status-info: #477FA9;
+
+            --shadow-sm: 0 1px 2px rgba(0,0,0,0.05);
+            --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06);
+            --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -2px rgba(0,0,0,0.05);
+            
+            --radius-md: 12px;
+            --radius-lg: 16px;
+            --radius-full: 9999px;
+
+            --font-sans: 'Inter', system-ui, sans-serif;
+            --font-display: 'Manrope', system-ui, sans-serif;
+            
+            --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --bg-color: #0B1117;
+                --surface-color: #111A22;
+                --surface-elevated: #18232D;
+                --primary: #5CC8A1;
+                --primary-soft: rgba(92, 200, 161, 0.15);
+                --primary-hover: #4bb38f;
+                --text-main: #F3F6F5;
+                --text-sec: #A7B3BA;
+                --border-color: #26343E;
+
+                --status-safe: #5CC8A1;
+                --status-warn: #E7A94B;
+                --status-danger: #D96868;
+                --status-info: #6EA8D7;
+                
+                --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.3);
+                --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.4);
+            }
+        }
+
+        [data-theme="light"] {
+            --bg-color: #F5F7F6; --surface-color: #FFFFFF; --surface-elevated: #EEF3F1;
+            --primary: #328F70; --primary-soft: #DCEFE8; --primary-hover: #297a5f;
+            --text-main: #17221F; --text-sec: #64736E; --border-color: #DCE4E1;
+            --status-safe: #328F70; --status-warn: #B77920; --status-danger: #C75454; --status-info: #477FA9;
+            --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.1);
+        }
+        
+        [data-theme="dark"] {
+            --bg-color: #0B1117; --surface-color: #111A22; --surface-elevated: #18232D;
+            --primary: #5CC8A1; --primary-soft: rgba(92, 200, 161, 0.15); --primary-hover: #4bb38f;
+            --text-main: #F3F6F5; --text-sec: #A7B3BA; --border-color: #26343E;
+            --status-safe: #5CC8A1; --status-warn: #E7A94B; --status-danger: #D96868; --status-info: #6EA8D7;
+            --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.3);
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        html { scroll-behavior: smooth; }
+        body {
+            font-family: var(--font-sans); background-color: var(--bg-color); color: var(--text-main);
+            display: flex; flex-direction: column; min-height: 100vh; overflow-x: hidden;
+            transition: background-color 0.3s, color 0.3s; -webkit-font-smoothing: antialiased;
+        }
+        h1, h2, h3, h4, h5, h6 { font-family: var(--font-display); font-weight: 700; line-height: 1.2; }
+        a { text-decoration: none; color: inherit; }
+        button { font-family: inherit; cursor: pointer; border: none; background: none; outline: none; transition: var(--transition); }
+        ul { list-style: none; }
+        
+        /* Lockdown Override */
+        body.lockdown-active {
+            --primary: var(--status-danger);
+            --primary-soft: rgba(217, 104, 104, 0.1);
+            animation: pulse-border 2s infinite;
+        }
+        @keyframes pulse-border {
+            0% { box-shadow: inset 0 0 0 0 rgba(217, 104, 104, 0); }
+            50% { box-shadow: inset 0 0 0 4px rgba(217, 104, 104, 0.3); }
+            100% { box-shadow: inset 0 0 0 0 rgba(217, 104, 104, 0); }
+        }
+
+        /* Utilities */
+        .text-primary { color: var(--primary); }
+        .text-danger { color: var(--status-danger); }
+        .text-warn { color: var(--status-warn); }
+        .text-sec { color: var(--text-sec); }
+        .flex { display: flex; } .flex-col { flex-direction: column; }
+        .items-center { align-items: center; } .justify-center { justify-content: center; } .justify-between { justify-content: space-between; }
+        .gap-2 { gap: 8px; } .gap-4 { gap: 16px; } .gap-6 { gap: 24px; } .gap-8 { gap: 32px; }
+        .mt-2 { margin-top: 8px; } .mt-4 { margin-top: 16px; } .mt-8 { margin-top: 32px; }
+        .mb-2 { margin-bottom: 8px; } .mb-4 { margin-bottom: 16px; } .mb-8 { margin-bottom: 32px; }
+        .text-center { text-align: center; }
+        .hidden { display: none !important; }
+
+        /* Buttons & Badges */
+        .btn {
+            display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+            padding: 12px 24px; border-radius: var(--radius-md); font-weight: 600; font-size: 0.875rem;
+            transition: var(--transition); white-space: nowrap; font-family: var(--font-sans);
+        }
+        .btn-primary { background-color: var(--primary); color: white; box-shadow: 0 4px 12px rgba(50, 143, 112, 0.3); }
+        .btn-primary:hover { background-color: var(--primary-hover); transform: translateY(-2px); box-shadow: 0 6px 16px rgba(50, 143, 112, 0.4); }
+        .btn-secondary { background-color: var(--surface-elevated); color: var(--text-main); border: 1px solid var(--border-color); }
+        .btn-secondary:hover { background-color: var(--border-color); transform: translateY(-1px); }
+        .btn-danger { background-color: var(--status-danger); color: white; }
+        .btn-danger:hover { background-color: #b94444; }
+        .btn-block { width: 100%; }
+        .btn-lg { padding: 16px 32px; font-size: 1rem; }
+
+        .badge { display: inline-flex; align-items: center; padding: 4px 10px; border-radius: 20px; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; }
+        .badge-safe { background-color: rgba(50, 143, 112, 0.15); color: var(--status-safe); border: 1px solid rgba(50, 143, 112, 0.3); }
+        .badge-danger { background-color: rgba(199, 84, 84, 0.15); color: var(--status-danger); border: 1px solid rgba(199, 84, 84, 0.3); }
+        .badge-warn { background-color: rgba(183, 121, 32, 0.15); color: var(--status-warn); border: 1px solid rgba(183, 121, 32, 0.3); }
+
+        .card { background-color: var(--surface-color); border: 1px solid var(--border-color); border-radius: var(--radius-lg); padding: 24px; box-shadow: var(--shadow-sm); }
+        
+        
+        /* Landing Page Layout */
+        #landing-view { display: flex; flex-direction: column; width: 100%; min-height: 100vh; }
+        .container { max-width: 1200px; margin: 0 auto; padding: 0 24px; width: 100%; }
+        .section { padding: 100px 0; }
+        
+        /* Typography MOTRA Brand */
+        .motra-logo { font-family: var(--font-display); font-size: 1.5rem; font-weight: 800; letter-spacing: -0.03em; color: var(--text-main); display: flex; align-items: center; gap: 8px;}
+        .motra-logo svg { color: var(--primary); }
+        
+        /* Landing Navbar */
+        .landing-nav { position: fixed; top: 0; left: 0; right: 0; height: 72px; background: rgba(var(--surface-color-rgb), 0.9); backdrop-filter: blur(10px); border-bottom: 1px solid var(--border-color); z-index: 100; display: flex; align-items: center; }
+        .landing-nav .container { display: flex; justify-content: space-between; align-items: center; }
+        
+        /* Theme Toggle */
+        .theme-toggle-wrapper { display: flex; background: var(--surface-elevated); border-radius: 20px; padding: 4px; border: 1px solid var(--border-color);}
+        .theme-btn { padding: 4px 12px; border-radius: 16px; font-size: 0.75rem; font-weight: 600; color: var(--text-sec); display: flex; gap: 6px; align-items: center; }
+        .theme-btn.active { background: var(--surface-color); color: var(--text-main); box-shadow: var(--shadow-sm); }
+
+        /* Hero Section */
+        .hero-section { min-height: 100vh; display: flex; align-items: center; justify-content: center; position: relative; overflow: hidden; text-align: center; padding-top: 72px;}
+        .hero-bg { position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: radial-gradient(circle at 50% 50%, var(--primary-soft) 0%, var(--bg-color) 70%); opacity: 0.5; z-index: -1; }
+        .hero-title { font-size: 4.5rem; font-weight: 800; letter-spacing: -0.04em; margin-bottom: 16px; line-height: 1.1; }
+        .hero-subtitle { font-size: 1.25rem; color: var(--text-sec); max-width: 600px; margin: 0 auto 40px; line-height: 1.6; }
+
+        /* Grid Layouts */
+        .grid-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 40px; }
+        .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 32px; }
+        .grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 24px; }
+        
+        /* Section Titles */
+        .section-header { text-align: center; margin-bottom: 64px; }
+        .section-label { font-size: 0.875rem; font-weight: 700; color: var(--primary); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 12px; }
+        .section-title { font-size: 2.5rem; font-weight: 800; letter-spacing: -0.03em; margin-bottom: 24px; }
+        .section-desc { font-size: 1.125rem; color: var(--text-sec); max-width: 650px; margin: 0 auto; line-height: 1.6; }
+
+        /* Content Cards */
+        .feature-card { background: var(--surface-color); padding: 32px; border-radius: var(--radius-lg); border: 1px solid var(--border-color); display: flex; flex-direction: column; height: 100%; transition: var(--transition); }
+        .feature-card:hover { transform: translateY(-5px); box-shadow: var(--shadow-lg); border-color: var(--primary); }
+        .feature-icon { width: 48px; height: 48px; background: var(--primary-soft); color: var(--primary); border-radius: 12px; display: flex; align-items: center; justify-content: center; margin-bottom: 24px; }
+        .feature-icon svg { width: 24px; height: 24px; }
+        .feature-title { font-size: 1.25rem; margin-bottom: 12px; }
+
+        /* Layers & Flow Diagram */
+        .flow-container { display: flex; flex-direction: column; align-items: center; gap: 16px; margin: 40px auto; max-width: 400px; }
+        .flow-box { width: 100%; background: var(--surface-color); border: 1px solid var(--border-color); padding: 20px; border-radius: var(--radius-md); text-align: center; font-weight: 600; box-shadow: var(--shadow-sm); z-index: 2; position: relative; }
+        .flow-arrow { width: 2px; height: 30px; background: var(--primary); opacity: 0.5; position: relative; }
+        .flow-arrow::after { content: ''; position: absolute; bottom: -5px; left: -4px; border-left: 5px solid transparent; border-right: 5px solid transparent; border-top: 6px solid var(--primary); }
+        .flow-layer { background: var(--surface-elevated); padding: 32px; border-radius: var(--radius-lg); border-left: 4px solid var(--primary); margin-bottom: 24px; }
+
+        /* 3D Viewer Area (Landing & Dashboard shared basis) */
+        .moto-viewer-container { width: 100%; height: 500px; background: var(--surface-elevated); border-radius: var(--radius-lg); border: 1px solid var(--border-color); position: relative; overflow: hidden; display: flex; justify-content: center; align-items: center; }
+        .moto-wrapper { width: 100%; height: 100%; position: relative; transition: transform 1s cubic-bezier(0.4, 0, 0.2, 1); }
+        .schematic-svg { width: 100%; height: 100%; overflow: visible; }
+        .s-path { fill: none; stroke: var(--text-sec); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; opacity: 0.3; transition: var(--transition); }
+        .s-component { fill: var(--surface-color); stroke: var(--primary); stroke-width: 2; cursor: pointer; transition: var(--transition); }
+        .s-component:hover { fill: var(--primary-soft); filter: drop-shadow(0 0 8px var(--primary)); }
+        .s-label { fill: var(--text-main); font-size: 10px; font-weight: 600; font-family: var(--font-sans); opacity: 0; transition: opacity 0.3s; pointer-events: none;}
+        
+        /* Exploded State */
+        .moto-wrapper.exploded .s-path { opacity: 0.1; }
+        .moto-wrapper.exploded .comp-esp { transform: translateY(-40px) translateX(-20px); }
+        .moto-wrapper.exploded .comp-gps { transform: translateY(-60px) translateX(30px); }
+        .moto-wrapper.exploded .comp-fp { transform: translateY(-30px) translateX(-10px); }
+        .moto-wrapper.exploded .comp-lock { transform: translateY(40px) translateX(-40px); }
+        .moto-wrapper.exploded .comp-batt { transform: translateY(30px) translateX(20px); }
+        .moto-wrapper.exploded .comp-sensor { transform: translateX(50px); }
+        .moto-wrapper.exploded .comp-relay { transform: translateY(20px) translateX(-10px); }
+        .moto-wrapper.exploded .s-label { opacity: 1; }
+
+        /* Hotspot Panel */
+        .hotspot-info { position: absolute; top: 24px; right: 24px; background: var(--surface-color); border: 1px solid var(--border-color); padding: 20px; border-radius: var(--radius-md); box-shadow: var(--shadow-lg); max-width: 280px; opacity: 0; pointer-events: none; transition: all 0.3s; transform: translateY(-10px); z-index: 10; }
+        .hotspot-info.active { opacity: 1; pointer-events: auto; transform: translateY(0); }
+
+        /* Name Meaning Visual */
+        .name-visual { display: flex; align-items: center; justify-content: center; gap: 24px; font-family: var(--font-display); font-size: 3rem; font-weight: 800; letter-spacing: -0.05em; margin: 40px 0; flex-wrap: wrap; }
+        .name-part { display: flex; flex-direction: column; align-items: center; }
+        .name-desc { font-size: 1rem; font-family: var(--font-sans); color: var(--text-sec); font-weight: 500; letter-spacing: 0; margin-top: 8px;}
+        .name-plus { color: var(--primary); }
+
+        
+        /* App Layout */
+        #app-view { display: flex; width: 100%; height: 100vh; overflow: hidden; }
+        
+        /* Sidebar */
+        .sidebar { width: 280px; background-color: var(--surface-color); border-right: 1px solid var(--border-color); display: flex; flex-direction: column; padding: 24px 0; z-index: 10; flex-shrink: 0;}
+        .brand { padding: 0 24px 32px; }
+        .nav-menu { flex: 1; padding: 0 16px; display: flex; flex-direction: column; gap: 4px; overflow-y: auto; }
+        .nav-item { display: flex; align-items: center; gap: 12px; padding: 12px 16px; border-radius: var(--radius-md); color: var(--text-sec); font-weight: 500; transition: var(--transition); }
+        .nav-item svg { width: 20px; height: 20px; opacity: 0.8; }
+        .nav-item:hover { background-color: var(--surface-elevated); color: var(--text-main); }
+        .nav-item.active { background-color: var(--primary-soft); color: var(--primary); }
+        .nav-item.active svg { opacity: 1; }
+        .sidebar-footer { padding: 16px 24px; border-top: 1px solid var(--border-color); display: flex; flex-direction: column; gap: 16px; }
+        
+        /* Main Content */
+        .main-wrapper { flex: 1; display: flex; flex-direction: column; background-color: var(--bg-color); overflow: hidden; position: relative; }
+        .topbar { height: 72px; background-color: var(--surface-color); border-bottom: 1px solid var(--border-color); display: flex; align-items: center; justify-content: space-between; padding: 0 32px; z-index: 5; flex-shrink: 0;}
+        .content-area { flex: 1; overflow-y: auto; padding: 32px; position: relative; }
+        
+        .view-section { display: none; animation: fadeIn 0.4s ease forwards; }
+        .view-section.active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* Dash UI Specifics */
+        .value-display { font-size: 1.5rem; font-family: var(--font-display); font-weight: 700; color: var(--text-main); margin-top: 8px; }
+        .value-sub { font-size: 0.875rem; color: var(--text-sec); margin-top: 4px; }
+        .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .card-title { font-size: 1rem; color: var(--text-sec); font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; display: flex; align-items: center; gap: 8px;}
+        
+        /* Hero Dashboard Card */
+        .hero-card { background: linear-gradient(135deg, var(--surface-color) 0%, var(--surface-elevated) 100%); position: relative; overflow: hidden; border: 1px solid var(--border-color); }
+        .status-mega { font-size: 2.5rem; font-family: var(--font-display); font-weight: 700; color: var(--status-safe); display: flex; align-items: center; gap: 12px; margin-top: 12px;}
+        .status-mega.alert { color: var(--status-danger); }
+
+        /* Switch Toggle */
+        .toggle-switch { position: relative; display: inline-block; width: 44px; height: 24px; }
+        .toggle-switch input { opacity: 0; width: 0; height: 0; }
+        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: var(--border-color); transition: .4s; border-radius: 24px; }
+        .slider:before { position: absolute; content: ""; height: 18px; width: 18px; left: 3px; bottom: 3px; background-color: white; transition: .4s; border-radius: 50%; box-shadow: 0 1px 3px rgba(0,0,0,0.3);}
+        input:checked + .slider { background-color: var(--primary); }
+        input:checked + .slider:before { transform: translateX(20px); }
+
+        /* Maps & Simulator */
+        .map-container { width: 100%; height: 400px; background-color: var(--surface-elevated); border-radius: var(--radius-lg); position: relative; overflow: hidden; border: 1px solid var(--border-color); background-image: radial-gradient(var(--border-color) 1px, transparent 0); background-size: 20px 20px;}
+        .map-zone { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 200px; height: 200px; border-radius: 50%; background-color: rgba(50, 143, 112, 0.1); border: 2px dashed var(--primary); transition: all 0.5s; display: flex; align-items: center; justify-content: center;}
+        .map-marker { position: absolute; top: 50%; left: 50%; width: 16px; height: 16px; background-color: var(--primary); border: 3px solid white; border-radius: 50%; transform: translate(-50%, -50%); box-shadow: 0 0 10px var(--primary); transition: all 1s ease-in-out; z-index: 2;}
+        .map-marker::after { content: ''; position: absolute; top: -10px; left: -10px; right: -10px; bottom: -10px; border-radius: 50%; border: 1px solid var(--primary); animation: radar 2s infinite; }
+        @keyframes radar { 0% { transform: scale(0.5); opacity: 1; } 100% { transform: scale(2); opacity: 0; } }
+        .map-marker.breached { background-color: var(--status-danger); box-shadow: 0 0 15px var(--status-danger); border-color: white; left: 70%; top: 30%; }
+        
+        .sim-steps { display: flex; flex-direction: column; gap: 8px; margin-top: 16px; }
+        .sim-step { padding: 12px; border-radius: var(--radius-md); background-color: var(--surface-elevated); border-left: 3px solid transparent; font-size: 0.875rem; opacity: 0.5; transition: all 0.3s; display: flex; justify-content: space-between; align-items: center;}
+        .sim-step.active { opacity: 1; border-left-color: var(--primary); background-color: var(--primary-soft); font-weight: 600;}
+        .sim-step.done { opacity: 1; border-left-color: var(--status-safe); }
+        .sim-step.danger { border-left-color: var(--status-danger); background-color: rgba(217, 104, 104, 0.1); color: var(--status-danger); font-weight: bold;}
+        
+        .timeline { position: relative; padding-left: 24px; }
+        .timeline::before { content: ''; position: absolute; left: 5px; top: 0; bottom: 0; width: 2px; background-color: var(--border-color); }
+        .timeline-item { position: relative; margin-bottom: 24px; }
+        .timeline-item::before { content: ''; position: absolute; left: -24px; top: 4px; width: 12px; height: 12px; border-radius: 50%; background-color: var(--surface-color); border: 2px solid var(--primary); z-index: 1; }
+
+        /* Notifications */
+        .toast-container { position: fixed; bottom: 24px; right: 24px; display: flex; flex-direction: column; gap: 12px; z-index: 1000; pointer-events: none; }
+        .toast { background-color: var(--surface-color); border: 1px solid var(--border-color); border-left: 4px solid var(--primary); padding: 16px 20px; border-radius: var(--radius-md); box-shadow: var(--shadow-lg); display: flex; align-items: center; gap: 12px; font-size: 0.875rem; font-weight: 500; animation: slideInRight 0.3s forwards; pointer-events: auto; }
+        @keyframes slideInRight { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+        
+        /* Mobile Specific */
+        .bottom-nav { display: none; }
+        @media (max-width: 900px) {
+            .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr; }
+            .hero-title { font-size: 3rem; }
+            .name-visual { font-size: 2rem; flex-direction: column; gap: 16px; }
+            .sidebar { display: none; }
+            .content-area { padding: 16px; padding-bottom: 80px; }
+            .bottom-nav { display: flex; position: fixed; bottom: 0; left: 0; right: 0; background-color: var(--surface-color); border-top: 1px solid var(--border-color); height: 64px; z-index: 50; justify-content: space-around; align-items: center; }
+            .b-nav-item { display: flex; flex-direction: column; align-items: center; justify-content: center; color: var(--text-sec); font-size: 0.65rem; font-weight: 600; gap: 4px; flex: 1; height: 100%;}
+            .b-nav-item.active { color: var(--primary); }
+            .landing-nav .theme-toggle-wrapper { display: none; } /* Simplify mobile landing nav */
+        }
+    </style>
+</head>
+<body>
+
+    <svg style="display: none;">
+        <symbol id="icon-shield" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></symbol>
+        <symbol id="icon-moto" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="5.5" cy="16.5" r="3.5"></circle><circle cx="18.5" cy="16.5" r="3.5"></circle><path d="M15 6h5v2h-5z"></path><path d="M12 11h-3.5a3.5 3.5 0 0 0 -3.5 3.5"></path><path d="M15 11l-3 -5h-3l-2.5 4.5"></path><path d="M18.5 13l-1.5 -4h-4"></path></symbol>
+        <symbol id="icon-map" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"></polygon><line x1="8" y1="2" x2="8" y2="18"></line><line x1="16" y1="6" x2="16" y2="22"></line></symbol>
+        <symbol id="icon-lock" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></symbol>
+        <symbol id="icon-unlock" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 9.9-1"></path></symbol>
+        <symbol id="icon-fingerprint" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12C2 6.48 6.48 2 12 2s10 4.48 10 10"></path><path d="M5 12c0-3.87 3.13-7 7-7s7 3.13 7 7"></path><path d="M8.29 12c.11-2.03 1.83-3.6 3.71-3.6s3.6 1.57 3.71 3.6"></path><path d="M12 12v.01"></path><path d="M15 15.5c-1 1.5-2.5 2.5-4.5 2.5s-3.5-1-4.5-2.5"></path></symbol>
+        <symbol id="icon-activity" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></symbol>
+        <symbol id="icon-bell" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></symbol>
+        <symbol id="icon-cpu" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="2" ry="2"></rect><rect x="9" y="9" width="6" height="6"></rect><line x1="9" y1="1" x2="9" y2="4"></line><line x1="15" y1="1" x2="15" y2="4"></line><line x1="9" y1="20" x2="9" y2="23"></line><line x1="15" y1="20" x2="15" y2="23"></line><line x1="20" y1="9" x2="23" y2="9"></line><line x1="20" y1="14" x2="23" y2="14"></line><line x1="1" y1="9" x2="4" y2="9"></line><line x1="1" y1="14" x2="4" y2="14"></line></symbol>
+        <symbol id="icon-battery" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="16" height="10" rx="2" ry="2"></rect><line x1="22" y1="11" x2="22" y2="13"></line><line x1="6" y1="11" x2="6" y2="13"></line><line x1="10" y1="11" x2="10" y2="13"></line><line x1="14" y1="11" x2="14" y2="13"></line></symbol>
+        <symbol id="icon-alert" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></symbol>
+        <symbol id="icon-book" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path></symbol>
+        <symbol id="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></symbol>
+        <symbol id="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></symbol>
+        <symbol id="icon-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></symbol>
+    </svg>
+
+    <div id="landing-view">
+        <nav class="landing-nav">
+            <div class="container">
+                <div class="motra-logo">
+                    <svg width="24" height="24"><use href="#icon-shield"></use></svg> MOTRA
+                </div>
+                <div class="flex items-center gap-4">
+                    <div class="theme-toggle-wrapper">
+                        <button class="theme-btn" onclick="setTheme('light')" id="btn-theme-light">Light</button>
+                        <button class="theme-btn active" onclick="setTheme('system')" id="btn-theme-system">System</button>
+                        <button class="theme-btn" onclick="setTheme('dark')" id="btn-theme-dark">Dark</button>
+                    </div>
+                    <button class="btn btn-primary" onclick="enterApp()">Buka Pusat Kendali</button>
+                </div>
+            </div>
+        </nav>
+
+        <section class="hero-section">
+            <div class="hero-bg"></div>
+            <div class="container">
+                <div class="badge badge-safe mb-4">Memperkenalkan MOTRA</div>
+                <h1 class="hero-title">Sistem Keamanan<br>Sepeda Motor Cerdas</h1>
+                <p class="hero-subtitle">Connected security designed around your motorcycle. Menggabungkan autentikasi biometrik, penguncian ganda, pelacakan lokasi, dan pemantauan sensor dalam satu ekosistem digital.</p>
+                <div class="flex justify-center gap-4">
+                    <a href="#about" class="btn btn-secondary btn-lg">Jelajahi MOTRA</a>
+                    <button class="btn btn-primary btn-lg" onclick="enterApp()">Buka Pusat Kendali</button>
+                </div>
+            </div>
+        </section>
+
+        <section id="about" class="section">
+            <div class="container text-center">
+                <div class="section-label">Apa itu MOTRA?</div>
+                <h2 class="section-title">Ekosistem Keamanan Terintegrasi</h2>
+                <p class="section-desc">MOTRA adalah konsep sistem keamanan cerdas yang mengintegrasikan perangkat keras keamanan pada kendaraan roda dua dengan aplikasi kontrol digital. Tujuannya bukan hanya mencegah akses fisik yang tidak sah, tetapi juga membantu Anda memantau kondisi kendaraan, menerima peringatan dini, dan memiliki kendali penuh dari mana saja.</p>
+            </div>
+        </section>
+
+        <section id="why" class="section" style="background-color: var(--surface-color);">
+            <div class="container">
+                <div class="section-header">
+                    <div class="section-label">Mengapa MOTRA Hadir?</div>
+                    <h2 class="section-title">Evolusi Keamanan Kendaraan</h2>
+                </div>
+                <div class="grid-3">
+                    <div class="feature-card">
+                        <div class="feature-title text-danger">Keamanan Konvensional</div>
+                        <p class="text-sec">Hanya mengandalkan kunci mekanis dan gembok fisik. Pemeriksaan dilakukan secara manual dan tidak memiliki sistem peringatan jarak jauh.</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-title text-warn">Tantangan Saat Ini</div>
+                        <p class="text-sec">Ancaman telah berkembang. Risiko meliputi pemindahan kendaraan secara paksa, sabotase perangkat, dan kurangnya pemantauan saat kendaraan ditinggalkan.</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-title text-primary">Pendekatan MOTRA</div>
+                        <p class="text-sec">Menggabungkan pengamanan mekanis, pemutus sirkuit elektronik, sensor presisi, GPS, dan notifikasi real-time ke dalam satu platform cerdas.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="section">
+            <div class="container">
+                <div class="section-header">
+                    <div class="section-label">Cara Kerja</div>
+                    <h2 class="section-title">Satu Kendaraan. Satu Ekosistem.</h2>
+                </div>
+                <div class="flow-container">
+                    <div class="flow-box">Pengguna & Aplikasi MOTRA</div>
+                    <div class="flow-arrow"></div>
+                    <div class="flow-box" style="border-color: var(--primary); background: var(--primary-soft); color: var(--primary);">Koneksi (Internet / Bluetooth)</div>
+                    <div class="flow-arrow"></div>
+                    <div class="flow-box">Perangkat Utama MOTRA (ESP32)</div>
+                    <div class="flow-arrow"></div>
+                    <div class="grid-3" style="width: 100%; gap: 16px;">
+                        <div class="flow-box" style="font-size: 0.8rem; padding: 10px;">Sensor & GPS</div>
+                        <div class="flow-box" style="font-size: 0.8rem; padding: 10px;">Autentikasi</div>
+                        <div class="flow-box" style="font-size: 0.8rem; padding: 10px;">Kunci Mekanis</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="layers" class="section" style="background-color: var(--surface-color);">
+            <div class="container">
+                <div class="section-header">
+                    <div class="section-label">Strategi Keamanan</div>
+                    <h2 class="section-title">Tiga Lapis Perlindungan</h2>
+                </div>
+                <div class="grid-3">
+                    <div class="flow-layer">
+                        <div class="badge badge-safe mb-4">Layer 01</div>
+                        <h3 class="mb-2">Autentikasi Biometrik</h3>
+                        <p class="text-sec text-sm">Verifikasi Sidik Jari memastikan akses daya dan mesin hanya diberikan kepada pengguna yang telah diotorisasi secara fisik.</p>
+                    </div>
+                    <div class="flow-layer">
+                        <div class="badge badge-safe mb-4">Layer 02</div>
+                        <h3 class="mb-2">Penguncian Ganda</h3>
+                        <p class="text-sec text-sm">MOTRA mengunci kendaraan Anda secara mekanis melalui Solenoid Lock dan secara elektronik melalui pemutus Relay Kelistrikan.</p>
+                    </div>
+                    <div class="flow-layer">
+                        <div class="badge badge-safe mb-4">Layer 03</div>
+                        <h3 class="mb-2">Pemantauan & Respons</h3>
+                        <p class="text-sec text-sm">Sensor getaran, sensor sabotase, dan modul GPS bekerja tanpa henti untuk mendeteksi ancaman dan membunyikan alarm pintar.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="explore" class="section">
+            <div class="container">
+                <div class="section-header">
+                    <div class="section-label">Eksplorasi Perangkat</div>
+                    <h2 class="section-title">Di Dalam MOTRA</h2>
+                    <p class="section-desc">Klik pada komponen di bawah ini untuk melihat teknologi perangkat keras yang membangun ekosistem keamanan MOTRA.</p>
+                </div>
+                
+                <!-- Interaktif SVG Viewer untuk Landing Page -->
+                <div class="moto-viewer-container mb-8">
+                    <button class="btn btn-secondary" style="position: absolute; top: 16px; left: 16px; z-index: 5;" onclick="toggleLandingExplode()" id="btn-landing-explode">Exploded View</button>
+                    <div class="moto-wrapper" id="landing-moto-model">
+                        <svg class="schematic-svg" viewBox="0 0 600 400" preserveAspectRatio="xMidYMid meet">
+                            <!-- Base Frame -->
+                            <path class="s-path" d="M 150 300 A 50 50 0 1 1 150 299 M 450 300 A 50 50 0 1 1 450 299" />
+                            <path class="s-path" d="M 150 300 L 250 150 L 400 150 L 450 300" stroke-width="8"/>
+                            <path class="s-path" d="M 250 150 L 200 100 M 200 100 L 220 80 M 200 100 L 180 80" stroke-width="6"/> 
+                            <path class="s-path" d="M 250 150 L 350 150 C 380 150 380 130 350 130 L 280 130 Z" fill="var(--surface-elevated)" opacity="0.5"/> 
+
+                            <!-- Interactive Components -->
+                            <g class="s-component comp-esp" onclick="showLandingHotspot('esp')">
+                                <rect x="260" y="160" width="60" height="40" rx="4" />
+                                <text x="290" y="185" text-anchor="middle" fill="white" font-size="12" font-family="sans-serif">ESP32</text>
+                                <text x="290" y="220" class="s-label text-center" text-anchor="middle">Kontroler Utama</text>
+                            </g>
+                            <g class="s-component comp-gps" onclick="showLandingHotspot('gps')">
+                                <rect x="330" y="150" width="30" height="20" rx="2" fill="var(--surface-color)" stroke="var(--status-info)"/>
+                                <circle cx="345" cy="160" r="4" fill="var(--status-info)"/>
+                                <text x="345" y="140" class="s-label text-center" text-anchor="middle">Modul GPS</text>
+                            </g>
+                            <g class="s-component comp-fp" onclick="showLandingHotspot('fp')">
+                                <rect x="220" y="90" width="25" height="15" rx="2" fill="var(--surface-color)" stroke="var(--primary)"/>
+                                <text x="232" y="80" class="s-label text-center" text-anchor="middle">Sidik Jari</text>
+                            </g>
+                            <g class="s-component comp-lock" onclick="showLandingHotspot('lock')">
+                                <rect x="130" y="230" width="20" height="30" rx="2" fill="var(--surface-color)" stroke="var(--status-warn)"/>
+                                <line x1="140" y1="230" x2="140" y2="260" stroke="var(--status-warn)" stroke-width="4"/>
+                                <text x="140" y="280" class="s-label text-center" text-anchor="middle">Solenoid Lock</text>
+                            </g>
+                            <g class="s-component comp-batt" onclick="showLandingHotspot('batt')">
+                                <rect x="270" y="210" width="40" height="25" rx="2" fill="var(--surface-color)" stroke="var(--primary)"/>
+                                <text x="290" y="250" class="s-label text-center" text-anchor="middle">Baterai Cadangan</text>
+                            </g>
+                            <g class="s-component comp-sensor" onclick="showLandingHotspot('sensor')">
+                                <circle cx="320" cy="200" r="10" fill="var(--surface-color)" stroke="var(--status-danger)"/>
+                                <path d="M 315 200 L 325 200 M 320 195 L 320 205" stroke="var(--status-danger)"/>
+                                <text x="320" y="225" class="s-label text-center" text-anchor="middle">Sensor IMU & Tamper</text>
+                            </g>
+                        </svg>
+                    </div>
+                    
+                    <div class="hotspot-info" id="landing-hotspot-panel">
+                        <div class="flex items-center gap-2 mb-2 font-weight-bold text-primary" id="lhs-title">Komponen</div>
+                        <div class="text-sm text-sec" id="lhs-desc" style="line-height: 1.4;">Deskripsi.</div>
+                    </div>
+                </div>
+
+                <div class="grid-4 mt-8">
+                    <div class="card" style="padding: 16px;"><div class="font-weight-bold mb-2">ESP32 Controller</div><div class="text-sm text-sec">Unit pemrosesan pusat yang menghubungkan logika sensor dan komunikasi.</div></div>
+                    <div class="card" style="padding: 16px;"><div class="font-weight-bold mb-2">Modul GPS</div><div class="text-sm text-sec">Menyediakan data lokasi presisi tinggi untuk pelacakan dan Geofencing.</div></div>
+                    <div class="card" style="padding: 16px;"><div class="font-weight-bold mb-2">Pemindai Sidik Jari</div><div class="text-sm text-sec">Akses biometrik yang memastikan hanya pemilik yang dapat menghidupkan mesin.</div></div>
+                    <div class="card" style="padding: 16px;"><div class="font-weight-bold mb-2">Baterai Cadangan</div><div class="text-sm text-sec">Menjaga sistem dan pelacakan tetap hidup bahkan jika aki motor diputus.</div></div>
+                </div>
+            </div>
+        </section>
+
+        <section id="vision" class="section" style="background-color: var(--surface-color);">
+            <div class="container">
+                <div class="section-header">
+                    <div class="section-label">Visi & Misi</div>
+                    <h2 class="section-title">Prinsip Keamanan MOTRA</h2>
+                </div>
+                <p class="text-center text-sec mb-8" style="font-size: 1.25rem; max-width: 800px; margin-left: auto; margin-right: auto; line-height: 1.6; font-weight: 500;">
+                    "Membangun ekosistem keamanan kendaraan roda dua yang lebih cerdas, terhubung, responsif, dan berorientasi pada kepercayaan pengguna."
+                </p>
+                <div class="grid-4 mt-8">
+                    <div class="feature-card" style="text-align: center;">
+                        <div class="feature-icon" style="margin: 0 auto 16px;"><svg><use href="#icon-shield"></use></svg></div>
+                        <h4 class="mb-2">01 — Protect</h4>
+                        <p class="text-sec text-sm">Menghadirkan perlindungan berlapis melalui autentikasi dan penguncian ganda.</p>
+                    </div>
+                    <div class="feature-card" style="text-align: center;">
+                        <div class="feature-icon" style="margin: 0 auto 16px;"><svg><use href="#icon-alert"></use></svg></div>
+                        <h4 class="mb-2">02 — Detect</h4>
+                        <p class="text-sec text-sm">Mendeteksi indikasi pergerakan tidak wajar dan gangguan sabotase perangkat.</p>
+                    </div>
+                    <div class="feature-card" style="text-align: center;">
+                        <div class="feature-icon" style="margin: 0 auto 16px;"><svg><use href="#icon-map"></use></svg></div>
+                        <h4 class="mb-2">03 — Connect</h4>
+                        <p class="text-sec text-sm">Menghubungkan kendaraan dengan aplikasi untuk pemantauan lokasi real-time.</p>
+                    </div>
+                    <div class="feature-card" style="text-align: center;">
+                        <div class="feature-icon" style="margin: 0 auto 16px;"><svg><use href="#icon-activity"></use></svg></div>
+                        <h4 class="mb-2">04 — Respond</h4>
+                        <p class="text-sec text-sm">Memberikan informasi dan peringatan secara cepat saat kondisi membahayakan.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="meaning" class="section">
+            <div class="container text-center">
+                <div class="section-label">Di Balik Nama</div>
+                <h2 class="section-title">Mengapa MOTRA?</h2>
+                
+                <div class="name-visual">
+                    <div class="name-part">
+                        MO
+                        <span class="name-desc">MOTOR</span>
+                    </div>
+                    <div class="name-plus">+</div>
+                    <div class="name-part">
+                        TRA
+                        <span class="name-desc">TRUST</span>
+                    </div>
+                </div>
+                
+                <p class="section-desc mt-8">Nama MOTRA mewakili perpaduan antara <strong>Motor</strong> (mobilitas) dan <strong>Trust</strong> (kepercayaan). Kami percaya bahwa teknologi keamanan sejati bukan hanya tentang mengunci sebuah benda, melainkan membangun rasa aman, keandalan, dan kepercayaan penuh pengguna terhadap kendaraannya di mana pun ia berada.</p>
+            </div>
+        </section>
+
+        <section class="section" style="background-color: var(--surface-color); border-top: 1px solid var(--border-color); text-align: center;">
+            <div class="container">
+                <h2 class="section-title">Siap Mencoba Pengalaman MOTRA?</h2>
+                <p class="section-desc mb-8">Masuk ke dalam Dasbor Kontrol untuk mencoba simulasi pelacakan, respons keamanan, dan diagnostik perangkat interaktif.</p>
+                <button class="btn btn-primary btn-lg" onclick="enterApp()">Buka Pusat Kendali MOTRA</button>
+            </div>
+        </section>
+        
+        <footer style="padding: 40px 0; text-align: center; color: var(--text-sec); border-top: 1px solid var(--border-color); font-size: 0.875rem;">
+            &copy; 2026 MOTRA Security System. Prototype Design.
+        </footer>
+    </div>
+
+
+    <div id="app-view" class="hidden">
+        
+        <!-- Sidebar Desktop -->
+        <aside class="sidebar">
+            <div class="brand motra-logo">
+                <svg width="24" height="24"><use href="#icon-shield"></use></svg> MOTRA
+            </div>
+            <nav class="nav-menu">
+                <a href="#dashboard" class="nav-item active" data-view="dashboard"><svg><use href="#icon-shield"></use></svg> Dasbor</a>
+                <a href="#vehicle" class="nav-item" data-view="vehicle"><svg><use href="#icon-moto"></use></svg> Kendaraan Saya</a>
+                <a href="#tracking" class="nav-item" data-view="tracking"><svg><use href="#icon-map"></use></svg> Pelacakan Lokasi</a>
+                <a href="#security" class="nav-item" data-view="security"><svg><use href="#icon-lock"></use></svg> Pusat Keamanan</a>
+                <a href="#diagnostics" class="nav-item" data-view="diagnostics"><svg><use href="#icon-cpu"></use></svg> Diagnostik Sistem</a>
+                <a href="#activity" class="nav-item" data-view="activity"><svg><use href="#icon-activity"></use></svg> Riwayat Aktivitas</a>
+                <a href="#guide" class="nav-item" data-view="guide"><svg><use href="#icon-book"></use></svg> Panduan MOTRA</a>
+            </nav>
+            <div class="sidebar-footer">
+                <div class="flex items-center gap-2 text-sm text-sec">
+                    <div style="width: 8px; height: 8px; border-radius: 50%; background: var(--status-safe); box-shadow: 0 0 8px var(--status-safe);" id="global-conn-dot"></div>
+                    <span id="global-conn-text">MOTRA Terhubung</span>
+                </div>
+                <button class="btn btn-secondary btn-block" onclick="exitApp()">Kembali ke Beranda</button>
+            </div>
+        </aside>
+
+        <main class="main-wrapper">
+            <!-- Topbar -->
+            <header class="topbar">
+                <div class="font-display font-weight-bold" style="font-size: 1.25rem;" id="view-title">Dasbor</div>
+                <div class="flex items-center gap-4">
+                    <button class="btn btn-secondary" style="padding: 8px;" onclick="simulateAlert('Simulasi Notifikasi Sistem')" title="Simulasi Notifikasi">
+                        <svg width="20" height="20"><use href="#icon-bell"></use></svg>
+                    </button>
+                    <!-- Small profile badge -->
+                    <div class="flex items-center gap-2" style="padding: 4px 12px; background: var(--surface-elevated); border-radius: 20px; border: 1px solid var(--border-color);">
+                        <div style="width: 24px; height: 24px; border-radius: 50%; background: var(--primary); color: white; display: flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: bold;">M</div>
+                        <div class="flex flex-col">
+                            <span style="font-size: 0.75rem; font-weight: 600; line-height: 1;">Pemilik Kendaraan</span>
+                            <span style="font-size: 0.65rem; color: var(--text-sec);">MOTRA-001</span>
+                        </div>
+                    </div>
+                </div>
+            </header>
+
+            <div class="content-area">
+                
+                <!-- VIEW: DASBOR -->
+                <section id="view-dashboard" class="view-section active">
+                    <div class="card hero-card mb-4" id="main-status-card">
+                        <div class="flex justify-between items-center" style="position: relative; z-index: 2;">
+                            <div class="flex flex-col gap-2">
+                                <h2 class="card-title">Status Keamanan Kendaraan</h2>
+                                <div class="status-mega" id="dashboard-main-status">
+                                    <svg width="40" height="40"><use href="#icon-shield"></use></svg> AMAN
+                                </div>
+                                <div class="flex gap-2 mt-4">
+                                    <span class="badge badge-safe" id="badge-lock">Kunci Ganda Aktif</span>
+                                    <span class="badge badge-safe" id="badge-zone">Di Dalam Zona Aman</span>
+                                </div>
+                            </div>
+                            <!-- Minimal schematic visualization -->
+                            <div style="width: 200px; height: 120px; opacity: 0.8;">
+                                <svg width="100%" height="100%" viewBox="0 0 200 100">
+                                    <path d="M30 70 A 15 15 0 1 1 30 69 Z" fill="none" stroke="var(--primary)" stroke-width="2"/>
+                                    <path d="M170 70 A 15 15 0 1 1 170 69 Z" fill="none" stroke="var(--primary)" stroke-width="2"/>
+                                    <path d="M30 70 L 60 40 L 120 40 L 150 70" fill="none" stroke="var(--primary)" stroke-width="3" opacity="0.5"/>
+                                    <rect x="85" y="35" width="30" height="15" rx="2" fill="var(--primary)"/>
+                                    <circle cx="100" cy="42" r="3" fill="var(--surface-color)">
+                                        <animate attributeName="r" values="3;10" dur="2s" repeatCount="indefinite" />
+                                        <animate attributeName="opacity" values="1;0" dur="2s" repeatCount="indefinite" />
+                                    </circle>
+                                </svg>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="grid-4 mb-8">
+                        <div class="card">
+                            <div class="card-title"><svg width="16" height="16"><use href="#icon-cpu"></use></svg> Status Mesin</div>
+                            <div class="value-display" id="dash-engine">MATI</div>
+                        </div>
+                        <div class="card">
+                            <div class="card-title"><svg width="16" height="16"><use href="#icon-battery"></use></svg> Aki Utama</div>
+                            <div class="value-display" id="dash-batt-main">12.6 V</div>
+                            <div class="value-sub text-primary">Kondisi Baik</div>
+                        </div>
+                        <div class="card">
+                            <div class="card-title"><svg width="16" height="16"><use href="#icon-battery"></use></svg> Baterai Cadangan</div>
+                            <div class="value-display" id="dash-batt-backup">87%</div>
+                            <div class="value-sub">Siap Digunakan</div>
+                        </div>
+                        <div class="card">
+                            <div class="card-title"><svg width="16" height="16"><use href="#icon-map"></use></svg> Sinyal GPS</div>
+                            <div class="value-display text-primary" id="dash-gps">Terhubung</div>
+                            <div class="value-sub">Akurasi ±5m</div>
+                        </div>
+                    </div>
+
+                    <h3 class="mb-4">Aksi Cepat</h3>
+                    <div class="grid-4">
+                        <button class="btn btn-secondary" onclick="navigate('tracking')">Lacak Lokasi</button>
+                        <button class="btn btn-secondary" onclick="navigate('security')">Uji Alarm</button>
+                        <button class="btn btn-secondary" onclick="navigate('diagnostics')">Pindai Sistem</button>
+                        <button class="btn btn-danger" onclick="triggerLockdownSim()">Simulasi Sabotase</button>
+                    </div>
+                </section>
+
+                <!-- VIEW: KENDARAAN SAYA (3D) -->
+                <section id="view-vehicle" class="view-section">
+                    <div class="card mb-4" style="height: 500px; display: flex; flex-direction: column;">
+                        <div class="card-header">
+                            <h2 class="card-title">Arsitektur Perangkat Keras</h2>
+                            <button class="btn btn-secondary" id="btn-app-explode" onclick="toggleAppExplode()">Exploded View</button>
+                        </div>
+                        <div class="moto-viewer-container" style="border: none; background: transparent;">
+                            <div class="moto-wrapper" id="app-moto-model">
+                                <!-- Reusing the SVG structural concept -->
+                                <svg class="schematic-svg" viewBox="0 0 600 400" preserveAspectRatio="xMidYMid meet">
+                                    <path class="s-path" d="M 150 300 A 50 50 0 1 1 150 299 M 450 300 A 50 50 0 1 1 450 299" />
+                                    <path class="s-path" d="M 150 300 L 250 150 L 400 150 L 450 300" stroke-width="8"/>
+                                    <path class="s-path" d="M 250 150 L 200 100 M 200 100 L 220 80 M 200 100 L 180 80" stroke-width="6"/> 
+                                    <path class="s-path" d="M 250 150 L 350 150 C 380 150 380 130 350 130 L 280 130 Z" fill="var(--surface-elevated)" opacity="0.5"/> 
+
+                                    <g class="s-component comp-esp" onclick="showAppHotspot('esp', event)">
+                                        <rect x="260" y="160" width="60" height="40" rx="4" />
+                                        <text x="290" y="185" text-anchor="middle" fill="white" font-size="12" font-family="sans-serif">ESP32</text>
+                                        <text x="290" y="220" class="s-label text-center" text-anchor="middle">Kontroler Utama</text>
+                                    </g>
+                                    <g class="s-component comp-gps" onclick="showAppHotspot('gps', event)">
+                                        <rect x="330" y="150" width="30" height="20" rx="2" fill="var(--surface-color)" stroke="var(--status-info)"/>
+                                        <circle cx="345" cy="160" r="4" fill="var(--status-info)"/>
+                                        <text x="345" y="140" class="s-label text-center" text-anchor="middle">Modul GPS</text>
+                                    </g>
+                                    <g class="s-component comp-fp" onclick="showAppHotspot('fp', event)">
+                                        <rect x="220" y="90" width="25" height="15" rx="2" fill="var(--surface-color)" stroke="var(--primary)"/>
+                                        <text x="232" y="80" class="s-label text-center" text-anchor="middle">Sidik Jari</text>
+                                    </g>
+                                    <g class="s-component comp-lock" onclick="showAppHotspot('lock', event)">
+                                        <rect x="130" y="230" width="20" height="30" rx="2" fill="var(--surface-color)" stroke="var(--status-warn)"/>
+                                        <line x1="140" y1="230" x2="140" y2="260" stroke="var(--status-warn)" stroke-width="4"/>
+                                        <text x="140" y="280" class="s-label text-center" text-anchor="middle">Solenoid Lock</text>
+                                    </g>
+                                    <g class="s-component comp-batt" onclick="showAppHotspot('batt', event)">
+                                        <rect x="270" y="210" width="40" height="25" rx="2" fill="var(--surface-color)" stroke="var(--primary)"/>
+                                        <text x="290" y="250" class="s-label text-center" text-anchor="middle">Baterai Cadangan</text>
+                                    </g>
+                                    <g class="s-component comp-sensor" onclick="showAppHotspot('sensor', event)">
+                                        <circle cx="320" cy="200" r="10" fill="var(--surface-color)" stroke="var(--status-danger)"/>
+                                        <path d="M 315 200 L 325 200 M 320 195 L 320 205" stroke="var(--status-danger)"/>
+                                        <text x="320" y="225" class="s-label text-center" text-anchor="middle">IMU & Tamper</text>
+                                    </g>
+                                </svg>
+                            </div>
+                            
+                            <div class="hotspot-info" id="app-hotspot-panel">
+                                <div class="flex items-center gap-2 mb-2 font-weight-bold text-primary" id="ahs-title">Komponen</div>
+                                <div class="text-sm text-sec" id="ahs-desc" style="line-height: 1.4;">Deskripsi.</div>
+                                <div class="badge badge-safe mt-4" id="ahs-status">Status: Operasional</div>
+                            </div>
+                        </div>
+                    </div>
+                    <p class="text-sec text-center text-sm">Prototipe Interaktif. Klik komponen untuk informasi detail.</p>
+                </section>
+
+                <!-- VIEW: PELACAKAN -->
+                <section id="view-tracking" class="view-section">
+                    <div class="card mb-4" style="padding: 0; overflow: hidden;">
+                        <div class="map-container">
+                            <div class="map-zone" id="map-trusted-zone"></div>
+                            <div class="map-marker" id="map-vehicle-marker"></div>
+                            
+                            <div style="position: absolute; top: 16px; left: 16px; background: var(--surface-color); padding: 16px; border-radius: var(--radius-md); box-shadow: var(--shadow-md); border: 1px solid var(--border-color); z-index: 5;">
+                                <div class="font-weight-bold mb-2">Telemetri Langsung</div>
+                                <div class="flex justify-between gap-6 text-sm text-sec mb-1"><span>Kecepatan:</span> <strong id="telemetry-speed" style="color:var(--text-main)">0 km/h</strong></div>
+                                <div class="flex justify-between gap-6 text-sm text-sec mb-1"><span>Pembaruan:</span> <strong style="color:var(--text-main)">Baru saja</strong></div>
+                                <div class="flex justify-between gap-6 text-sm text-sec"><span>Akurasi:</span> <strong style="color:var(--text-main)">±2.4m</strong></div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="grid-2">
+                        <div class="card">
+                            <h3 class="card-title mb-4">Zona Aman (Geofencing)</h3>
+                            <div class="flex justify-between items-center mb-4">
+                                <div>
+                                    <div class="font-weight-bold">Zona Rumah Aktif</div>
+                                    <div class="text-sm text-sec">Radius: 50m</div>
+                                </div>
+                                <label class="toggle-switch">
+                                    <input type="checkbox" checked id="toggle-geofence">
+                                    <span class="slider"></span>
+                                </label>
+                            </div>
+                            <button class="btn btn-secondary btn-block" onclick="simVehicleLeaveZone()">Simulasi Kendaraan Keluar Zona</button>
+                        </div>
+                        <div class="card">
+                            <h3 class="card-title mb-4">Aksi Lokasi</h3>
+                            <div class="flex flex-col gap-2">
+                                <button class="btn btn-secondary justify-start" onclick="resetMap()"><svg width="16" height="16"><use href="#icon-map"></use></svg> Pusatkan Kendaraan</button>
+                                <button class="btn btn-secondary justify-start"><svg width="16" height="16"><use href="#icon-activity"></use></svg> Lihat Riwayat Perjalanan</button>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- VIEW: KEAMANAN -->
+                <section id="view-security" class="view-section">
+                    <div class="grid-2 mb-4">
+                        <div class="card">
+                            <h2 class="card-title mb-4">Kontrol Keamanan</h2>
+                            <div class="flex justify-between items-center mb-4 pb-4" style="border-bottom: 1px solid var(--border-color)">
+                                <div>
+                                    <div class="font-weight-bold">Sistem Alarm Pintar</div>
+                                    <div class="text-sm text-sec">Buzzer perangkat & notifikasi aplikasi</div>
+                                </div>
+                                <label class="toggle-switch">
+                                    <input type="checkbox" checked id="toggle-alarm-sys">
+                                    <span class="slider"></span>
+                                </label>
+                            </div>
+                            <div class="flex justify-between items-center mb-4 pb-4" style="border-bottom: 1px solid var(--border-color)">
+                                <div>
+                                    <div class="font-weight-bold">Sistem Kunci Ganda</div>
+                                    <div class="text-sm text-sec">Solenoid mekanis + Pemutus elektronik</div>
+                                </div>
+                                <label class="toggle-switch">
+                                    <input type="checkbox" checked id="toggle-dual-lock">
+                                    <span class="slider"></span>
+                                </label>
+                            </div>
+                            <button class="btn btn-primary btn-block mt-4" id="btn-test-alarm" onclick="testAlarm()">Uji Sirine (3 Detik)</button>
+                        </div>
+
+                        <div class="card">
+                            <h2 class="card-title mb-4">Akses & Biometrik</h2>
+                            <div style="width: 120px; height: 150px; border: 2px dashed var(--border-color); border-radius: var(--radius-md); margin: 0 auto 16px; display: flex; align-items: center; justify-content: center; position: relative; overflow: hidden; background-color: var(--surface-elevated);" id="sim-fp-scanner">
+                                <svg width="64" height="64" class="text-sec" style="opacity: 0.5;" id="fp-icon-sim"><use href="#icon-fingerprint"></use></svg>
+                                <div id="fp-scan-line" style="position: absolute; top: 0; left: 0; width: 100%; height: 4px; background-color: var(--primary); display: none;"></div>
+                            </div>
+                            <div class="flex gap-2 mb-4">
+                                <button class="btn btn-secondary flex-1" onclick="simFingerprint(true)">Sim. Berhasil</button>
+                                <button class="btn btn-secondary flex-1" onclick="simFingerprint(false)">Sim. Gagal</button>
+                            </div>
+                            
+                            <div class="pt-4" style="border-top: 1px solid var(--border-color)">
+                                <div class="font-weight-bold mb-2">Akses Darurat / Pengguna Lain</div>
+                                <button class="btn btn-secondary btn-block" onclick="generateTempCode()">Buat Kode Akses Sementara</button>
+                                <div id="temp-code-display" class="hidden mt-4 text-center" style="font-family: monospace; font-size: 1.25rem; font-weight: bold; letter-spacing: 4px; color: var(--primary);">
+                                    TAP-TAHAN-TAP
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Simulator Respons Ancaman -->
+                    <div class="card">
+                        <div class="card-header">
+                            <h2 class="card-title"><svg width="16" height="16"><use href="#icon-alert"></use></svg> Simulator Respons Ancaman</h2>
+                            <span class="badge badge-warn">Mode Demonstrasi</span>
+                        </div>
+                        <p class="text-sec mb-4 text-sm">Jalankan skenario untuk melihat secara langsung bagaimana ekosistem MOTRA mendeteksi dan merespons ancaman fisik terhadap kendaraan.</p>
+                        
+                        <div class="grid-3 mb-4">
+                            <button class="btn btn-secondary" onclick="runScenario('movement')">Skenario: Pergerakan Ilegal</button>
+                            <button class="btn btn-secondary" onclick="runScenario('tamper')">Skenario: Sabotase Perangkat</button>
+                            <button class="btn btn-secondary" onclick="resetDemoState()">Reset Status Sistem</button>
+                        </div>
+
+                        <div class="sim-steps" id="sim-workflow">
+                            <div class="sim-step" id="step-1">1. Sensor memantau kondisi kendaraan...</div>
+                            <div class="sim-step" id="step-2">2. Hardware mendeteksi anomali fisik</div>
+                            <div class="sim-step" id="step-3">3. ESP32 memvalidasi data ancaman</div>
+                            <div class="sim-step" id="step-4">4. Sistem Kunci Ganda bertahan & Alarm Aktif</div>
+                            <div class="sim-step" id="step-5">5. Aplikasi menerima notifikasi darurat & GPS melacak lokasi</div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- VIEW: DIAGNOSTIK -->
+                <section id="view-diagnostics" class="view-section">
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <h2 class="card-title">Pemeriksaan Kesehatan Sistem</h2>
+                            <button class="btn btn-primary" onclick="runFullDiagnostic()" id="btn-run-diag">Mulai Pemindaian</button>
+                        </div>
+                        
+                        <div style="height: 4px; background: var(--surface-elevated); border-radius: 2px; overflow: hidden; margin-bottom: 24px;">
+                            <div id="diag-progress" style="height: 100%; width: 0%; background: var(--primary); transition: width 0.3s linear;"></div>
+                        </div>
+
+                        <div class="grid-2" id="diag-list">
+                            <!-- JS Populated -->
+                        </div>
+                    </div>
+                </section>
+
+                <!-- VIEW: RIWAYAT -->
+                <section id="view-activity" class="view-section">
+                    <div class="card">
+                        <h2 class="card-title mb-4">Log Kejadian</h2>
+                        <div class="timeline" id="event-timeline">
+                            <!-- JS Populated -->
+                        </div>
+                    </div>
+                </section>
+                
+                <!-- VIEW: PANDUAN -->
+                <section id="view-guide" class="view-section">
+                    <div class="card mb-4">
+                        <h2 class="card-title mb-4">Memahami Alur Kerja MOTRA</h2>
+                        <div class="flex items-center gap-2 mb-4" style="overflow-x: auto; padding-bottom: 8px;">
+                            <span class="badge badge-safe">Sidik Jari Valid</span> →
+                            <span class="badge badge-safe">ESP32 Otorisasi</span> →
+                            <span class="badge badge-safe">Relay Terhubung</span> →
+                            <span class="badge badge-safe">Solenoid Terbuka</span> →
+                            <span class="badge badge-safe">Mesin Siap</span>
+                        </div>
+                        <p class="text-sec text-sm" style="line-height: 1.6;">
+                            MOTRA adalah sistem keamanan berkalang tertutup (closed-loop). Kontroler utama (ESP32) bertindak sebagai otak yang secara konstan membaca data dari sensor getaran (IMU) dan Tamper Switch. Sistem memanfaatkan Mekanisme Kunci Ganda: pemutusan elektronik kelistrikan motor, dan penguncian fisik pada setir/roda.
+                        </p>
+                    </div>
+                    <div class="grid-2">
+                        <div class="card">
+                            <h3 class="card-title mb-2">Baterai Cadangan Internal</h3>
+                            <p class="text-sec text-sm">Jika pencuri mencoba memotong kabel aki utama sepeda motor (taktik pencurian umum), baterai cadangan Li-ion terintegrasi akan langsung menyuplai daya ke ESP32, GPS, dan Sirine untuk membunyikan alarm perlindungan.</p>
+                        </div>
+                        <div class="card">
+                            <h3 class="card-title mb-2">Anti-Sabotase (Micro-Switch)</h3>
+                            <p class="text-sec text-sm">Sebuah sakelar mekanis terkompresi antara casing perangkat dan bodi motor. Jika casing MOTRA dibongkar paksa, sakelar ini terlepas, yang seketika memicu Mode Kunci Darurat secara lokal, terlepas dari ada atau tidaknya koneksi internet.</p>
+                        </div>
+                    </div>
+                </section>
+            </div>
+        </main>
+
+        <!-- Mobile Bottom Nav -->
+        <nav class="bottom-nav">
+            <a href="#dashboard" class="b-nav-item active" data-view="dashboard"><svg width="24" height="24"><use href="#icon-shield"></use></svg> Dasbor</a>
+            <a href="#tracking" class="b-nav-item" data-view="tracking"><svg width="24" height="24"><use href="#icon-map"></use></svg> Pelacakan</a>
+            <a href="#security" class="b-nav-item" data-view="security"><svg width="24" height="24"><use href="#icon-lock"></use></svg> Keamanan</a>
+            <a href="#activity" class="b-nav-item" data-view="activity"><svg width="24" height="24"><use href="#icon-activity"></use></svg> Riwayat</a>
+        </nav>
+    </div>
+
+    <!-- Notification Container -->
+    <div class="toast-container" id="toast-container"></div>
+
+    <script>
+        
+        const MOTRA_COMPONENTS = [
+            { id: 'esp', name: 'ESP32 Controller', desc: 'Unit pemrosesan utama yang mengatur logika sensor, autentikasi, dan komunikasi ke aplikasi.', status: 'Normal', icon: '#icon-cpu' },
+            { id: 'gps', name: 'Modul GPS', desc: 'Menyediakan data telemetri lokasi secara real-time dan melayani fungsi geofencing (Zona Aman).', status: 'Sinyal Kuat', icon: '#icon-map' },
+            { id: 'fp', name: 'Pemindai Sidik Jari', desc: 'Sensor biometrik kapasitif untuk autentikasi utama yang sangat cepat dan aman.', status: 'Siap', icon: '#icon-fingerprint' },
+            { id: 'lock', name: 'Solenoid Lock', desc: 'Mekanisme penguncian fisik yang kuat pada bagian roda atau sistem kemudi kendaraan.', status: 'Terkunci', icon: '#icon-lock' },
+            { id: 'batt', name: 'Baterai Cadangan', desc: 'Sumber daya internal (Li-ion) sebagai pertahanan cadangan saat aki utama diputus.', status: 'Kapasitas 87%', icon: '#icon-battery' },
+            { id: 'sensor', name: 'Sensor Getaran & Sabotase', desc: 'IMU untuk mendeteksi pergerakan ilegal dan sakelar mikro untuk mencegah pembongkaran.', status: 'Bersiaga', icon: '#icon-alert' },
+            { id: 'relay', name: 'Relay Kelistrikan', desc: 'Mengatur izin arus listrik menuju sistem pengapian kendaraan.', status: 'Memutus Arus', icon: '#icon-cpu' }
+        ];
+
+        const AppState = {
+            context: 'landing', // landing or app
+            theme: localStorage.getItem('motra_theme') || 'system',
+            systemStatus: 'SECURED',
+            simulationRunning: false,
+            inTrustedZone: true,
+            events: [
+                { time: '08:45 AM', type: 'info', text: 'Sistem diaktifkan secara otomatis.' },
+                { time: '08:42 AM', type: 'safe', text: 'Sidik jari diautentikasi. Mesin DIMATIKAN.' },
+                { time: '07:15 AM', type: 'safe', text: 'Kendaraan memasuki Zona Aman.' }
+            ]
+        };
+
+        document.addEventListener('DOMContentLoaded', () => {
+            setTheme(AppState.theme);
+            initNavigation();
+            renderDiagnostics();
+            renderActivity();
+        });
+
+
+        function setTheme(theme) {
+            AppState.theme = theme;
+            document.documentElement.setAttribute('data-theme', theme);
+            localStorage.setItem('motra_theme', theme);
+            
+            // Update Toggle UI in landing
+            document.querySelectorAll('.theme-btn').forEach(btn => btn.classList.remove('active'));
+            document.getElementById(`btn-theme-${theme}`)?.classList.add('active');
+        }
+
+        function enterApp() {
+            document.getElementById('landing-view').classList.add('hidden');
+            document.getElementById('app-view').classList.remove('hidden');
+            AppState.context = 'app';
+            window.scrollTo(0,0);
+        }
+
+        function exitApp() {
+            document.getElementById('app-view').classList.add('hidden');
+            document.getElementById('landing-view').classList.remove('hidden');
+            AppState.context = 'landing';
+            window.scrollTo(0,0);
+        }
+
+        function initNavigation() {
+            const links = document.querySelectorAll('[data-view]');
+            links.forEach(link => {
+                link.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    navigate(link.getAttribute('data-view'));
+                });
+            });
+        }
+
+        function navigate(viewId) {
+            document.querySelectorAll('[data-view]').forEach(l => l.classList.remove('active'));
+            document.querySelectorAll(`[data-view="${viewId}"]`).forEach(l => l.classList.add('active'));
+            document.querySelectorAll('.view-section').forEach(sec => sec.classList.remove('active'));
+            document.getElementById(`view-${viewId}`).classList.add('active');
+
+            const titles = { dashboard: 'Dasbor Utama', vehicle: 'Arsitektur Kendaraan', tracking: 'Pelacakan Lokasi', security: 'Pusat Keamanan', diagnostics: 'Diagnostik Sistem', activity: 'Riwayat Aktivitas', guide: 'Panduan Sistem' };
+            document.getElementById('view-title').innerText = titles[viewId] || 'Dasbor';
+        }
+
+        function showNotification(message, type = 'info') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            let icon = '#icon-bell';
+            if(type === 'danger') { icon = '#icon-alert'; toast.style.borderLeftColor = 'var(--status-danger)'; }
+            if(type === 'safe') { icon = '#icon-shield'; toast.style.borderLeftColor = 'var(--status-safe)'; }
+            if(type === 'warn') { icon = '#icon-alert'; toast.style.borderLeftColor = 'var(--status-warn)'; }
+
+            toast.className = 'toast';
+            toast.innerHTML = `<svg width="20" height="20" style="color: inherit"><use href="${icon}"></use></svg> <span>${message}</span>`;
+            
+            container.appendChild(toast);
+            
+            // Ensure we only record events while in app view to keep logic clean, but notifications can show anywhere
+            addEvent(message, type);
+
+            setTimeout(() => {
+                toast.style.animation = 'slideInRight 0.3s reverse forwards';
+                setTimeout(() => toast.remove(), 300);
+            }, 4000);
+        }
+
+        function addEvent(text, type) {
+            const now = new Date();
+            const timeStr = now.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+            AppState.events.unshift({ time: timeStr, type: type, text: text });
+            if(AppState.events.length > 10) AppState.events.pop();
+            renderActivity();
+        }
+
+        function renderActivity() {
+            const tl = document.getElementById('event-timeline');
+            if(!tl) return;
+            tl.innerHTML = AppState.events.map(ev => `
+                <div class="timeline-item ${ev.type === 'danger' ? 'alert' : ''}">
+                    <div class="text-sm text-sec font-weight-bold mb-1">${ev.time}</div>
+                    <div class="card" style="padding: 12px 16px; ${ev.type === 'danger' ? 'border-color: var(--status-danger); background: rgba(199, 84, 84, 0.05);' : ''}">
+                        ${ev.text}
+                    </div>
+                </div>
+            `).join('');
+        }
+
+
+        // --- 3D / SVG Interactions ---
+        function toggleLandingExplode() {
+            const wrapper = document.getElementById('landing-moto-model');
+            wrapper.classList.toggle('exploded');
+            document.getElementById('btn-landing-explode').innerText = wrapper.classList.contains('exploded') ? 'Rakit Kembali' : 'Exploded View';
+        }
+        
+        function toggleAppExplode() {
+            const wrapper = document.getElementById('app-moto-model');
+            wrapper.classList.toggle('exploded');
+            document.getElementById('btn-app-explode').innerText = wrapper.classList.contains('exploded') ? 'Rakit Kembali' : 'Exploded View';
+        }
+
+        function showLandingHotspot(id) {
+            const comp = MOTRA_COMPONENTS.find(c => c.id === id);
+            const panel = document.getElementById('landing-hotspot-panel');
+            if(comp) {
+                document.getElementById('lhs-title').innerHTML = `<svg width="16" height="16"><use href="${comp.icon}"></use></svg> ${comp.name}`;
+                document.getElementById('lhs-desc').innerText = comp.desc;
+                panel.classList.add('active');
+                setTimeout(() => {
+                    document.addEventListener('click', function hideL() {
+                        panel.classList.remove('active');
+                        document.removeEventListener('click', hideL);
+                    });
+                }, 100);
+            }
+        }
+        
+        function showAppHotspot(id, event) {
+            event.stopPropagation();
+            const comp = MOTRA_COMPONENTS.find(c => c.id === id);
+            const panel = document.getElementById('app-hotspot-panel');
+            if(comp) {
+                document.getElementById('ahs-title').innerHTML = `<svg width="16" height="16"><use href="${comp.icon}"></use></svg> ${comp.name}`;
+                document.getElementById('ahs-desc').innerText = comp.desc;
+                document.getElementById('ahs-status').innerText = `Status: ${comp.status}`;
+                panel.classList.add('active');
+                document.addEventListener('click', function hideA() {
+                    panel.classList.remove('active');
+                    document.removeEventListener('click', hideA);
+                });
+            }
+        }
+
+        // --- Security Simulator ---
+        function testAlarm() {
+            const btn = document.getElementById('btn-test-alarm');
+            if(btn.disabled) return;
+            btn.disabled = true;
+            btn.innerText = "Sirine Berbunyi...";
+            btn.classList.replace('btn-primary', 'btn-danger');
+            showNotification("Menguji sirine perangkat internal...", "warn");
+            setTimeout(() => {
+                btn.disabled = false;
+                btn.innerText = "Uji Sirine (3 Detik)";
+                btn.classList.replace('btn-danger', 'btn-primary');
+            }, 3000);
+        }
+
+        function simFingerprint(success) {
+            const icon = document.getElementById('fp-icon-sim');
+            const line = document.getElementById('fp-scan-line');
+            line.style.display = 'block';
+            line.style.animation = 'radar 1s ease-in-out infinite alternate';
+            
+            setTimeout(() => {
+                line.style.display = 'none';
+                if(success) {
+                    icon.style.color = 'var(--status-safe)';
+                    showNotification("Biometrik cocok. Kunci Ganda dilepaskan.", "safe");
+                    updateAppStatus('UNLOCKED');
+                } else {
+                    icon.style.color = 'var(--status-danger)';
+                    showNotification("Sidik jari tidak dikenali sistem.", "danger");
+                }
+                setTimeout(() => { icon.style.color = 'inherit'; }, 2000);
+            }, 1500);
+        }
+
+        function generateTempCode() {
+            const display = document.getElementById('temp-code-display');
+            display.classList.remove('hidden');
+            const seqs = ['TAP-TAHAN-TAP', 'TAHAN-TAP-TAP', 'TAP-TAP-TAHAN'];
+            display.innerText = seqs[Math.floor(Math.random() * seqs.length)];
+            showNotification("Kode urutan akses mekanis sementara berhasil dibuat.", "info");
+        }
+
+        function runScenario(type) {
+            if(AppState.simulationRunning) return;
+            AppState.simulationRunning = true;
+            
+            // Reset Steps
+            for(let i=1; i<=5; i++) {
+                const el = document.getElementById(`step-${i}`);
+                el.className = 'sim-step';
+            }
+            
+            document.getElementById('step-1').classList.add('active');
+            showNotification(`Memulai Simulasi: ${type === 'tamper' ? 'Sabotase Perangkat' : 'Pergerakan Ilegal'}`, "warn");
+            setTimeout(() => advanceStep(1, 2, type), 1000);
+        }
+
+        function advanceStep(curr, next, type) {
+            document.getElementById(`step-${curr}`).className = 'sim-step done';
+            if(next <= 5) {
+                document.getElementById(`step-${next}`).className = 'sim-step active';
+                let delay = 1000;
+                if(next === 3) delay = 1500; // Fake processing
+                if(next === 4) triggerDangerState(type);
+                setTimeout(() => advanceStep(next, next + 1, type), delay);
+            } else {
+                document.getElementById('step-5').className = 'sim-step danger';
+                AppState.simulationRunning = false;
+            }
+        }
+
+        function triggerDangerState(type) {
+            showNotification(`KRITIS: ${type === 'tamper' ? 'Sakelar Sabotase Terbuka' : 'IMU mendeteksi pergerakan ilegal'}!`, "danger");
+            updateAppStatus('ALERT');
+            
+            if(type === 'movement') {
+                document.getElementById('map-vehicle-marker').classList.add('breached');
+                document.getElementById('telemetry-speed').innerText = "15 km/h";
+                document.getElementById('telemetry-speed').style.color = "var(--status-danger)";
+            }
+        }
+
+        function simVehicleLeaveZone() {
+            if(!AppState.inTrustedZone) return;
+            AppState.inTrustedZone = false;
+            document.getElementById('map-vehicle-marker').classList.add('breached');
+            document.getElementById('badge-zone').className = 'badge badge-danger';
+            document.getElementById('badge-zone').innerText = 'Di Luar Zona';
+            showNotification("Kendaraan keluar dari Zona Aman. Alarm disiagakan maksimal.", "warn");
+        }
+
+        function resetMap() {
+            document.getElementById('map-vehicle-marker').classList.remove('breached');
+            AppState.inTrustedZone = true;
+            document.getElementById('badge-zone').className = 'badge badge-safe';
+            document.getElementById('badge-zone').innerText = 'Di Dalam Zona Aman';
+            document.getElementById('telemetry-speed').innerText = "0 km/h";
+            document.getElementById('telemetry-speed').style.color = "var(--text-main)";
+            showNotification("Peta dipusatkan kembali.", "info");
+        }
+
+        function resetDemoState() {
+            if(AppState.simulationRunning) return;
+            updateAppStatus('SECURED');
+            resetMap();
+            for(let i=1; i<=5; i++) document.getElementById(`step-${i}`).className = 'sim-step';
+            showNotification("Sistem di-reset ke parameter AMAN awal.", "info");
+        }
+        
+        function triggerLockdownSim() {
+            navigate('security');
+            runScenario('tamper');
+        }
+
+        function updateAppStatus(status) {
+            const mega = document.getElementById('dashboard-main-status');
+            if(status === 'ALERT') {
+                mega.innerHTML = `<svg width="40" height="40"><use href="#icon-alert"></use></svg> WASPADA`;
+                mega.className = 'status-mega alert';
+                document.body.classList.add('lockdown-active');
+                document.getElementById('global-conn-text').innerText = "Kunci Darurat Aktif";
+                document.getElementById('global-conn-text').style.color = "var(--status-danger)";
+            } else if (status === 'UNLOCKED') {
+                mega.innerHTML = `<svg width="40" height="40"><use href="#icon-unlock"></use></svg> SIAGA`;
+                mega.className = 'status-mega';
+                mega.style.color = 'var(--status-info)';
+                document.getElementById('badge-lock').className = 'badge badge-warn';
+                document.getElementById('badge-lock').innerText = 'Kunci Dilepas';
+                document.getElementById('dash-engine').innerText = "MENYALA";
+            } else { // SECURED
+                mega.innerHTML = `<svg width="40" height="40"><use href="#icon-shield"></use></svg> AMAN`;
+                mega.className = 'status-mega';
+                mega.style.color = 'var(--status-safe)';
+                document.body.classList.remove('lockdown-active');
+                document.getElementById('badge-lock').className = 'badge badge-safe';
+                document.getElementById('badge-lock').innerText = 'Kunci Ganda Aktif';
+                document.getElementById('dash-engine').innerText = "MATI";
+                document.getElementById('global-conn-text').innerText = "MOTRA Terhubung";
+                document.getElementById('global-conn-text').style.color = "inherit";
+            }
+        }
+
+        function renderDiagnostics() {
+            const list = document.getElementById('diag-list');
+            list.innerHTML = MOTRA_COMPONENTS.map(c => `
+                <div class="card" style="padding: 16px;">
+                    <div class="flex items-center gap-2 mb-2 font-weight-bold">
+                        <svg width="16" height="16" class="text-primary"><use href="${c.icon}"></use></svg> ${c.name}
+                    </div>
+                    <div class="flex justify-between items-center text-sm">
+                        <span class="text-sec">Status</span>
+                        <span class="badge badge-safe" id="diag-badge-${c.id}">${c.status}</span>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function runFullDiagnostic() {
+            const btn = document.getElementById('btn-run-diag');
+            const bar = document.getElementById('diag-progress');
+            if(btn.disabled) return;
+            
+            btn.disabled = true;
+            btn.innerText = "Memindai...";
+            bar.style.width = "0%";
+            
+            MOTRA_COMPONENTS.forEach(c => {
+                document.getElementById(`diag-badge-${c.id}`).className = 'badge';
+                document.getElementById(`diag-badge-${c.id}`).innerText = 'Memeriksa...';
+            });
+
+            setTimeout(() => bar.style.width = "40%", 800);
+            setTimeout(() => bar.style.width = "80%", 1600);
+            setTimeout(() => {
+                bar.style.width = "100%";
+                btn.disabled = false;
+                btn.innerText = "Mulai Pemindaian";
+                
+                MOTRA_COMPONENTS.forEach(c => {
+                    const badge = document.getElementById(`diag-badge-${c.id}`);
+                    badge.className = 'badge badge-safe';
+                    badge.innerText = c.status;
+                });
+                showNotification("Diagnostik selesai. Seluruh sistem beroperasi optimal.", "safe");
+            }, 2400);
+        }
+
+        // Global Alert Helper
+        window.simulateAlert = function(msg) {
+            showNotification(msg, 'info');
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,1422 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#9d2632" />
+  <meta name="description" content="MOTRA — Smart Motorcycle Security & Monitoring System. Frontend prototype." />
+  <title>MOTRA — Smart Motorcycle Security</title>
+
+  <!-- External UI/Map dependencies are optional enhancements. The app has CSS/JS fallbacks. -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link id="leaflet-css" rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="anonymous" onerror="window.__leafletCssFailed=true" />
+
+  <style>
+    /* =========================================================
+       MOTRA — DESIGN SYSTEM
+       ========================================================= */
+    :root {
+      --red-700: #8d202c;
+      --red-600: #a72835;
+      --red-500: #bd3a45;
+      --red-100: #f7e7e9;
+      --red-50: #fbf2f3;
+      --maroon: #551a23;
+      --bg: #f4f4f3;
+      --surface: #ffffff;
+      --surface-2: #f8f8f7;
+      --text: #1f2226;
+      --muted: #70757d;
+      --line: #e2e3e5;
+      --success: #247a52;
+      --success-soft: #e5f3ec;
+      --warning: #a66b17;
+      --warning-soft: #fff3dd;
+      --danger: #a32231;
+      --danger-soft: #f8e5e8;
+      --info: #375c91;
+      --info-soft: #eaf1fb;
+      --shadow-sm: 0 2px 8px rgba(22, 24, 28, .05);
+      --shadow-md: 0 12px 30px rgba(22, 24, 28, .08);
+      --shadow-lg: 0 24px 60px rgba(22, 24, 28, .12);
+      --radius-sm: 10px;
+      --radius-md: 16px;
+      --radius-lg: 24px;
+      --radius-xl: 30px;
+      --sidebar: 248px;
+      --header: 78px;
+      --ease: cubic-bezier(.2,.75,.3,1);
+    }
+
+    html[data-theme="dark"] {
+      --bg: #151619;
+      --surface: #1d1f23;
+      --surface-2: #25272b;
+      --text: #f2f2f0;
+      --muted: #a3a7ae;
+      --line: #34373d;
+      --red-100: #3b2429;
+      --red-50: #2d1f23;
+      --success-soft: #19372a;
+      --warning-soft: #3b301c;
+      --danger-soft: #3b2026;
+      --info-soft: #1d2c43;
+      --shadow-sm: 0 2px 10px rgba(0,0,0,.18);
+      --shadow-md: 0 14px 34px rgba(0,0,0,.25);
+      --shadow-lg: 0 28px 70px rgba(0,0,0,.34);
+    }
+
+    * { box-sizing: border-box; }
+    html, body { margin: 0; min-height: 100%; background: var(--bg); color: var(--text); }
+    body { font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; line-height: 1.5; -webkit-font-smoothing: antialiased; }
+    button, input, select { font: inherit; }
+    button { cursor: pointer; }
+    a { color: inherit; text-decoration: none; }
+    img { max-width: 100%; }
+    ::selection { background: rgba(189,58,69,.22); }
+
+    .hidden { display: none !important; }
+    .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
+    .muted { color: var(--muted); }
+
+    /* =========================================================
+       GENERIC UI
+       ========================================================= */
+    .btn {
+      min-height: 44px;
+      padding: 0 16px;
+      border: 1px solid transparent;
+      border-radius: 12px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 9px;
+      font-weight: 700;
+      font-size: 14px;
+      transition: transform .18s var(--ease), box-shadow .18s var(--ease), background .18s var(--ease), border-color .18s var(--ease);
+    }
+    .btn:active { transform: translateY(1px) scale(.99); }
+    .btn-primary { background: var(--red-600); color: #fff; box-shadow: 0 10px 24px rgba(167,40,53,.18); }
+    .btn-primary:hover { background: var(--red-700); transform: translateY(-1px); box-shadow: 0 14px 28px rgba(167,40,53,.22); }
+    .btn-secondary { background: var(--surface); color: var(--text); border-color: var(--line); box-shadow: var(--shadow-sm); }
+    .btn-secondary:hover { border-color: #c9cbd0; transform: translateY(-1px); }
+    .btn-ghost { background: transparent; color: var(--muted); }
+    .btn-ghost:hover { background: var(--surface-2); color: var(--text); }
+    .btn-danger { background: var(--danger); color: white; }
+    .btn-sm { min-height: 36px; padding: 0 12px; border-radius: 10px; font-size: 12px; }
+    .icon-btn {
+      width: 42px; height: 42px; border-radius: 12px; display: inline-grid; place-items: center;
+      color: var(--muted); background: var(--surface); border: 1px solid var(--line); transition: .18s var(--ease);
+      flex: 0 0 auto;
+    }
+    .icon-btn:hover { color: var(--text); border-color: #c8cbd0; transform: translateY(-1px); }
+
+    .card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-lg); box-shadow: var(--shadow-sm); }
+    .card-pad { padding: 20px; }
+    .eyebrow { color: var(--red-600); text-transform: uppercase; letter-spacing: .12em; font-size: 11px; font-weight: 800; }
+    .section-title { margin: 0; font-size: clamp(21px, 2.3vw, 28px); letter-spacing: -.025em; }
+    .section-subtitle { margin: 5px 0 0; color: var(--muted); font-size: 13px; }
+
+    .status-dot { width: 9px; height: 9px; border-radius: 50%; display: inline-block; background: currentColor; }
+    .badge { display: inline-flex; align-items: center; gap: 7px; min-height: 28px; padding: 0 10px; border-radius: 999px; font-weight: 700; font-size: 11px; border: 1px solid transparent; white-space: nowrap; }
+    .badge.success { background: var(--success-soft); color: var(--success); }
+    .badge.warning { background: var(--warning-soft); color: var(--warning); }
+    .badge.danger { background: var(--danger-soft); color: var(--danger); }
+    .badge.info { background: var(--info-soft); color: var(--info); }
+    .badge.neutral { background: var(--surface-2); color: var(--muted); border-color: var(--line); }
+
+    .input-wrap { position: relative; }
+    .input, .select {
+      width: 100%; min-height: 46px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface-2); color: var(--text); padding: 0 13px;
+      outline: none; transition: border .18s var(--ease), box-shadow .18s var(--ease), background .18s var(--ease);
+    }
+    .input:focus, .select:focus { border-color: rgba(167,40,53,.5); box-shadow: 0 0 0 4px rgba(167,40,53,.08); background: var(--surface); }
+    .label { display: block; margin-bottom: 7px; font-size: 12px; font-weight: 700; }
+    .helper { font-size: 11px; color: var(--muted); margin-top: 6px; }
+
+    .modal-backdrop { position: fixed; inset: 0; background: rgba(13,14,16,.52); backdrop-filter: blur(7px); z-index: 1000; display: grid; place-items: center; padding: 16px; }
+    .modal { width: min(520px, 100%); max-height: min(88vh, 760px); overflow: auto; background: var(--surface); border: 1px solid var(--line); border-radius: 24px; box-shadow: var(--shadow-lg); animation: modal-in .25s var(--ease); }
+    @keyframes modal-in { from { opacity: 0; transform: translateY(16px) scale(.985); } to { opacity: 1; transform: none; } }
+    .modal-header { padding: 20px 20px 10px; display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+    .modal-body { padding: 10px 20px 20px; }
+    .modal-title { margin: 0; font-size: 19px; }
+    .modal-copy { margin: 4px 0 0; color: var(--muted); font-size: 12px; }
+
+    /* =========================================================
+       WELCOME + AUTH
+       ========================================================= */
+    #welcome-screen { min-height: 100vh; display: grid; place-items: center; padding: 24px; position: relative; overflow: hidden; background: radial-gradient(circle at 50% 12%, rgba(189,58,69,.08), transparent 36%), var(--bg); }
+    .welcome-shell { width: min(1040px, 100%); min-height: min(760px, calc(100vh - 48px)); display: grid; grid-template-rows: auto 1fr auto; align-items: center; justify-items: center; text-align: center; }
+    .welcome-brand { display: inline-flex; align-items: center; gap: 10px; margin-top: 6px; }
+    .brand-mark { width: 42px; height: 42px; border-radius: 13px; display: grid; place-items: center; color: white; background: linear-gradient(145deg, var(--red-500), var(--maroon)); box-shadow: 0 12px 28px rgba(141,32,44,.18); }
+    .brand-word { font-size: 15px; font-weight: 800; letter-spacing: .16em; }
+    .welcome-copy { align-self: center; max-width: 800px; animation: rise .6s var(--ease) both; }
+    .welcome-kicker { font-size: 12px; font-weight: 800; color: var(--red-600); letter-spacing: .16em; text-transform: uppercase; }
+    .welcome-copy h1 { margin: 10px 0 8px; font-size: clamp(42px, 8vw, 80px); line-height: .98; letter-spacing: -.07em; }
+    .welcome-copy p { max-width: 620px; margin: 0 auto; color: var(--muted); font-size: clamp(14px, 2vw, 17px); }
+    .welcome-art { margin: 26px auto 18px; width: min(360px, 62vw); aspect-ratio: 1; border-radius: 34px; overflow: hidden; background: var(--surface); border: 1px solid var(--line); box-shadow: var(--shadow-lg); animation: floaty 5s ease-in-out infinite; display: grid; place-items: center; }
+    .welcome-art img { width: 100%; height: 100%; object-fit: contain; display: block; }
+    .welcome-art .theme-fallback { display: none; align-items: center; justify-items: center; gap: 12px; color: var(--muted); padding: 32px; }
+    .welcome-footer { display: flex; align-items: center; gap: 12px; flex-direction: column; padding-bottom: 6px; }
+    .welcome-meta { font-size: 11px; color: var(--muted); }
+    @keyframes rise { from { opacity:0; transform: translateY(18px); } to { opacity:1; transform:none; } }
+    @keyframes floaty { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-7px); } }
+
+    .auth-modal .modal { width: min(470px, 100%); }
+    .auth-tabs { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; padding: 4px; background: var(--surface-2); border-radius: 12px; margin-bottom: 18px; }
+    .auth-tab { min-height: 40px; border: 0; border-radius: 9px; background: transparent; color: var(--muted); font-weight: 700; }
+    .auth-tab.active { background: var(--surface); color: var(--text); box-shadow: var(--shadow-sm); }
+    .auth-form { display: grid; gap: 13px; }
+    .auth-switch { margin-top: 14px; text-align: center; font-size: 11px; color: var(--muted); }
+    .auth-switch button { color: var(--red-600); font-weight: 800; background: none; border: 0; }
+
+    /* =========================================================
+       APP SHELL
+       ========================================================= */
+    #app-shell { min-height: 100vh; display: grid; grid-template-columns: var(--sidebar) 1fr; }
+    .sidebar { position: sticky; top: 0; height: 100vh; padding: 19px 14px; background: var(--surface); border-right: 1px solid var(--line); display: flex; flex-direction: column; z-index: 80; }
+    .sidebar-brand { padding: 3px 10px 20px; display: flex; align-items: center; gap: 10px; }
+    .sidebar-brand .brand-mark { width: 38px; height: 38px; border-radius: 12px; }
+    .sidebar-brand strong { letter-spacing: .12em; font-size: 14px; }
+    .sidebar-brand small { display: block; color: var(--muted); font-size: 10px; margin-top: 1px; }
+    .nav-group { display: grid; gap: 4px; }
+    .nav-label { padding: 10px 11px 7px; color: var(--muted); font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: .12em; }
+    .nav-item { min-height: 44px; padding: 0 12px; border: 1px solid transparent; background: transparent; color: var(--muted); border-radius: 12px; display: flex; align-items: center; gap: 11px; font-weight: 700; font-size: 13px; text-align: left; transition: .18s var(--ease); }
+    .nav-item:hover { background: var(--surface-2); color: var(--text); }
+    .nav-item.active { background: var(--red-50); color: var(--red-700); border-color: rgba(167,40,53,.08); }
+    .sidebar-bottom { margin-top: auto; padding-top: 14px; border-top: 1px solid var(--line); }
+    .prototype-note { padding: 12px; margin-bottom: 10px; background: var(--surface-2); border: 1px solid var(--line); border-radius: 14px; }
+    .prototype-note b { font-size: 11px; display: block; margin-bottom: 3px; }
+    .prototype-note p { margin: 0; color: var(--muted); font-size: 10px; line-height: 1.45; }
+
+    .app-main { min-width: 0; display: flex; flex-direction: column; }
+    .topbar { position: sticky; top: 0; height: var(--header); display: flex; align-items: center; justify-content: space-between; padding: 0 24px; background: color-mix(in srgb, var(--surface) 88%, transparent); backdrop-filter: blur(16px); border-bottom: 1px solid var(--line); z-index: 70; }
+    .mobile-brand { display: none; align-items: center; gap: 9px; }
+    .mobile-brand .brand-mark { width: 34px; height: 34px; border-radius: 10px; }
+    .topbar-left { display: flex; align-items: center; gap: 12px; min-width: 0; }
+    .page-context { min-width: 0; }
+    .page-context strong { display: block; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .page-context span { display: block; font-size: 10px; color: var(--muted); }
+    .topbar-right { display: flex; align-items: center; gap: 8px; }
+    .live-status { display: inline-flex; align-items: center; gap: 7px; min-height: 32px; padding: 0 10px; border-radius: 999px; background: var(--success-soft); color: var(--success); font-size: 10px; font-weight: 800; }
+    .avatar { width: 38px; height: 38px; border-radius: 12px; display: grid; place-items: center; background: var(--red-100); color: var(--red-700); font-weight: 800; font-size: 12px; overflow: hidden; border: 1px solid rgba(167,40,53,.08); }
+    .avatar img { width: 100%; height: 100%; object-fit: cover; }
+    .profile-trigger { border: 0; display: inline-flex; align-items: center; gap: 8px; background: transparent; color: var(--text); padding: 2px; border-radius: 14px; }
+    .profile-name { max-width: 120px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 11px; font-weight: 800; }
+
+    .content { width: min(1440px, 100%); margin: 0 auto; padding: 26px; }
+    .view { display: none; animation: view-in .3s var(--ease); }
+    .view.active { display: block; }
+    @keyframes view-in { from { opacity: 0; transform: translateY(8px); } to { opacity:1; transform:none; } }
+
+    .view-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 18px; margin-bottom: 20px; }
+    .view-head-actions { display: flex; align-items: center; gap: 8px; }
+
+    /* =========================================================
+       DASHBOARD
+       ========================================================= */
+    .dashboard-hero { display: grid; grid-template-columns: 1.5fr .85fr; gap: 16px; margin-bottom: 16px; }
+    .hero-panel { min-height: 238px; padding: 24px; border-radius: 26px; position: relative; overflow: hidden; background: linear-gradient(145deg, #31161b 0%, #68232d 58%, #8d202c 100%); color: white; box-shadow: 0 18px 38px rgba(85,26,35,.16); }
+    .hero-panel::after { content:""; position:absolute; width:270px; height:270px; right:-90px; top:-120px; border-radius:50%; border:1px solid rgba(255,255,255,.15); box-shadow: 0 0 0 30px rgba(255,255,255,.025), 0 0 0 70px rgba(255,255,255,.018); }
+    .hero-label { display: inline-flex; align-items: center; gap: 8px; padding: 6px 9px; border-radius: 999px; background: rgba(255,255,255,.10); font-size: 10px; font-weight: 800; letter-spacing: .08em; }
+    .hero-panel h2 { margin: 18px 0 6px; font-size: clamp(28px, 4vw, 42px); line-height: 1.02; letter-spacing: -.05em; }
+    .hero-panel p { margin: 0; max-width: 580px; color: rgba(255,255,255,.72); font-size: 12px; }
+    .hero-actions { position: absolute; bottom: 22px; left: 24px; display: flex; gap: 8px; flex-wrap: wrap; }
+    .hero-actions .btn-primary { background: white; color: var(--maroon); box-shadow: none; }
+    .hero-actions .btn-secondary { background: rgba(255,255,255,.08); color: white; border-color: rgba(255,255,255,.15); box-shadow: none; }
+    .security-panel { padding: 20px; display: flex; flex-direction: column; justify-content: space-between; min-height: 238px; }
+    .security-top { display:flex; align-items:center; justify-content:space-between; gap: 12px; }
+    .security-score { width: 96px; height: 96px; border-radius: 50%; display: grid; place-items:center; border: 9px solid var(--success-soft); color: var(--success); position:relative; }
+    .security-score::before { content:""; position:absolute; inset:-9px; border-radius:50%; border:3px solid currentColor; border-right-color:transparent; border-bottom-color:transparent; transform:rotate(-25deg); }
+    .security-score strong { font-size: 22px; line-height:1; }
+    .security-score small { font-size: 9px; font-weight: 800; color: var(--muted); margin-top: 4px; }
+    .security-panel h3 { margin: 12px 0 2px; font-size: 18px; }
+    .security-panel p { margin:0; color: var(--muted); font-size: 11px; }
+
+    .stat-grid { display:grid; grid-template-columns: repeat(4, minmax(0,1fr)); gap: 12px; margin-bottom: 16px; }
+    .stat-card { padding: 16px; min-width:0; }
+    .stat-top { display:flex; justify-content:space-between; gap:8px; align-items:flex-start; }
+    .stat-icon { width: 36px; height:36px; border-radius:11px; display:grid; place-items:center; background: var(--surface-2); color: var(--muted); }
+    .stat-label { color: var(--muted); font-size: 10px; font-weight: 700; }
+    .stat-value { margin-top: 9px; font-size: 18px; font-weight: 800; letter-spacing:-.03em; }
+    .stat-foot { margin-top: 4px; color: var(--muted); font-size: 10px; }
+
+    .dashboard-grid { display:grid; grid-template-columns: 1.1fr .9fr; gap:16px; }
+    .activity-card { min-height: 360px; }
+    .card-head { padding: 18px 20px 14px; display:flex; align-items:center; justify-content:space-between; gap:10px; border-bottom:1px solid var(--line); }
+    .card-head h3 { margin:0; font-size: 14px; }
+    .card-head p { margin:2px 0 0; font-size:10px; color:var(--muted); }
+    .activity-list { padding: 10px 20px 14px; }
+    .activity-row { display:grid; grid-template-columns: 33px 1fr auto; gap:10px; align-items:center; padding:10px 0; }
+    .activity-icon { width:33px; height:33px; border-radius:10px; display:grid; place-items:center; background: var(--surface-2); color: var(--muted); }
+    .activity-row strong { display:block; font-size: 11px; }
+    .activity-row span { display:block; margin-top:2px; color:var(--muted); font-size:9px; }
+    .activity-time { color: var(--muted); font-size:9px; }
+    .mini-map { min-height:360px; overflow:hidden; }
+    .map-placeholder { min-height: 285px; margin: 14px; border:1px solid var(--line); border-radius: 18px; overflow:hidden; position:relative; }
+    #dashboard-map { height: 285px; }
+    .map-fallback { position:absolute; inset:0; display:grid; place-items:center; background: linear-gradient(90deg, transparent 23px, color-mix(in srgb, var(--muted) 10%, transparent) 24px), linear-gradient(transparent 23px, color-mix(in srgb, var(--muted) 10%, transparent) 24px), var(--surface-2); background-size:24px 24px; color:var(--muted); font-size:11px; }
+    .map-caption { padding: 0 18px 18px; display:flex; justify-content:space-between; gap:12px; font-size:10px; }
+
+    /* =========================================================
+       VEHICLE / 3D
+       ========================================================= */
+    .vehicle-layout { display:grid; grid-template-columns: 1.15fr .85fr; gap:16px; }
+    .viewer-card { overflow:hidden; }
+    #three-viewer { min-height: 520px; position:relative; background: radial-gradient(circle at 50% 38%, rgba(189,58,69,.12), transparent 37%), linear-gradient(145deg, var(--surface-2), var(--surface)); }
+    #three-canvas { width:100%; height:100%; min-height:520px; display:block; touch-action:none; }
+    .viewer-overlay { position:absolute; left:16px; right:16px; top:15px; display:flex; justify-content:space-between; align-items:flex-start; pointer-events:none; }
+    .viewer-overlay > * { pointer-events:auto; }
+    .model-state { padding: 8px 10px; border-radius: 11px; background: color-mix(in srgb, var(--surface) 90%, transparent); border:1px solid var(--line); backdrop-filter: blur(8px); font-size:10px; color:var(--muted); }
+    .viewer-controls { display:flex; gap:6px; }
+    .viewer-controls .icon-btn { width:38px; height:38px; }
+    .model-fallback { position:absolute; inset:0; display:grid; place-items:center; padding:30px; text-align:center; color:var(--muted); }
+    .model-fallback-inner { max-width: 380px; }
+    .model-fallback strong { display:block; margin-bottom:6px; color:var(--text); font-size:14px; }
+    .model-fallback code { display:inline-block; margin-top:9px; padding:5px 7px; border-radius:7px; background:var(--surface-2); color:var(--text); font-size:10px; }
+    .vehicle-side { display:grid; grid-template-rows: auto auto 1fr; gap:16px; }
+    .vehicle-info { padding: 20px; }
+    .vehicle-name-row { display:flex; justify-content:space-between; align-items:flex-start; gap:14px; }
+    .vehicle-name-row h2 { margin:0; font-size:24px; letter-spacing:-.04em; }
+    .vehicle-sub { margin:4px 0 0; color:var(--muted); font-size:11px; }
+    .vehicle-meta { display:grid; grid-template-columns: repeat(2,1fr); gap:10px; margin-top:18px; }
+    .meta-tile { background:var(--surface-2); border:1px solid var(--line); padding:12px; border-radius:14px; }
+    .meta-tile span { display:block; font-size:9px; color:var(--muted); }
+    .meta-tile strong { display:block; margin-top:3px; font-size:11px; }
+    .sensor-list { padding: 10px 20px 16px; }
+    .sensor-row { display:flex; align-items:center; justify-content:space-between; gap:10px; padding:11px 0; border-bottom:1px solid var(--line); }
+    .sensor-row:last-child { border-bottom:0; }
+    .sensor-left { display:flex; align-items:center; gap:10px; }
+    .sensor-left .stat-icon { width:32px; height:32px; border-radius:9px; }
+    .sensor-left strong { font-size:11px; }
+    .sensor-left span { display:block; margin-top:2px; color:var(--muted); font-size:9px; }
+
+    /* =========================================================
+       LOCATION
+       ========================================================= */
+    .location-layout { display:grid; grid-template-columns: 1.35fr .65fr; gap:16px; }
+    .map-card { overflow:hidden; }
+    #main-map { height: 560px; }
+    .location-side { display:grid; gap:16px; align-content:start; }
+    .location-card { padding:18px; }
+    .location-current { display:flex; align-items:flex-start; gap:12px; }
+    .location-pin { width:42px; height:42px; border-radius:12px; display:grid; place-items:center; background:var(--red-50); color:var(--red-700); flex:0 0 auto; }
+    .location-current strong { display:block; font-size:13px; }
+    .location-current span { display:block; margin-top:2px; color:var(--muted); font-size:10px; line-height:1.5; }
+    .nearby-tabs { display:grid; grid-template-columns: repeat(4,1fr); gap:5px; padding:5px; background:var(--surface-2); border:1px solid var(--line); border-radius:13px; margin-bottom:10px; }
+    .nearby-tab { min-height:36px; border:0; border-radius:9px; background:transparent; color:var(--muted); font-weight:800; font-size:9px; }
+    .nearby-tab.active { background:var(--surface); color:var(--text); box-shadow:var(--shadow-sm); }
+    .place-list { display:grid; gap:7px; }
+    .place-item { padding:11px; border:1px solid var(--line); border-radius:13px; background:var(--surface-2); display:grid; grid-template-columns: 34px 1fr auto; gap:9px; align-items:center; }
+    .place-icon { width:34px; height:34px; border-radius:10px; display:grid; place-items:center; background:var(--surface); color:var(--muted); }
+    .place-item strong { display:block; font-size:10px; }
+    .place-item span { display:block; color:var(--muted); font-size:9px; margin-top:2px; }
+    .place-distance { font-size:9px; font-weight:800; color:var(--text); white-space:nowrap; }
+    .sim-label { display:inline-flex; align-items:center; gap:6px; color:var(--muted); font-size:9px; margin-bottom:8px; }
+    .sim-label::before { content:""; width:5px; height:5px; border-radius:50%; background:var(--red-500); }
+
+    /* =========================================================
+       SECURITY / SIMULATION
+       ========================================================= */
+    .security-layout { display:grid; grid-template-columns: 1fr .8fr; gap:16px; }
+    .security-control { padding: 22px; }
+    .large-status { display:flex; align-items:center; gap:14px; }
+    .status-orb { width:58px; height:58px; border-radius:17px; display:grid; place-items:center; background:var(--success-soft); color:var(--success); }
+    .large-status h2 { margin:0; font-size:26px; letter-spacing:-.045em; }
+    .large-status p { margin:3px 0 0; color:var(--muted); font-size:10px; }
+    .security-actions { display:grid; grid-template-columns: repeat(2,1fr); gap:9px; margin-top:22px; }
+    .security-action { min-height:66px; padding:12px; display:flex; align-items:center; gap:10px; border:1px solid var(--line); border-radius:14px; background:var(--surface-2); color:var(--text); font-weight:800; text-align:left; }
+    .security-action:hover { border-color:rgba(167,40,53,.25); transform: translateY(-1px); }
+    .security-action small { display:block; color:var(--muted); font-weight:600; margin-top:2px; }
+    .security-progress { margin-top:18px; }
+    .progress-top { display:flex; justify-content:space-between; font-size:10px; margin-bottom:7px; }
+    .progress { height:7px; border-radius:999px; overflow:hidden; background:var(--surface-2); border:1px solid var(--line); }
+    .progress > span { display:block; height:100%; width:92%; background:linear-gradient(90deg, var(--red-700), var(--red-500)); border-radius:inherit; transition:width .35s var(--ease); }
+    .diag-list { padding: 10px 20px 18px; }
+    .diag-row { display:grid; grid-template-columns: 1fr auto; gap:10px; align-items:center; padding: 11px 0; border-bottom:1px solid var(--line); }
+    .diag-row:last-child { border-bottom:0; }
+    .diag-name { font-size:10px; font-weight:700; }
+    .diag-sub { display:block; font-size:9px; color:var(--muted); margin-top:2px; }
+
+    .scenario-grid { display:grid; grid-template-columns: repeat(5, 1fr); gap:10px; }
+    .scenario { min-height:150px; padding:15px; border:1px solid var(--line); border-radius:18px; background:var(--surface); box-shadow:var(--shadow-sm); transition: .18s var(--ease); display:flex; flex-direction:column; justify-content:space-between; }
+    .scenario:hover { transform:translateY(-2px); box-shadow:var(--shadow-md); }
+    .scenario-icon { width:38px; height:38px; border-radius:12px; background:var(--surface-2); display:grid; place-items:center; color:var(--muted); }
+    .scenario strong { display:block; font-size:11px; margin-top:12px; }
+    .scenario span { display:block; margin-top:4px; color:var(--muted); font-size:9px; line-height:1.45; }
+    .simulation-live { margin-top:14px; padding:16px; border-radius:18px; border:1px solid var(--line); background:var(--surface); display:flex; align-items:center; justify-content:space-between; gap:12px; }
+    .sim-live-left { display:flex; align-items:center; gap:10px; }
+    .sim-live-light { width:11px; height:11px; border-radius:50%; background:var(--success); box-shadow:0 0 0 5px var(--success-soft); }
+    .sim-live-copy strong { display:block; font-size:11px; }
+    .sim-live-copy span { display:block; font-size:9px; color:var(--muted); margin-top:2px; }
+
+    /* =========================================================
+       OBSERVATION
+       ========================================================= */
+    .filter-row { display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:12px; flex-wrap:wrap; }
+    .filter-left { display:flex; align-items:center; gap:7px; flex-wrap:wrap; }
+    .table-card { overflow:hidden; }
+    .table-scroll { overflow:auto; }
+    table { width:100%; border-collapse:collapse; min-width:740px; }
+    th, td { padding:13px 15px; border-bottom:1px solid var(--line); text-align:left; font-size:10px; vertical-align:middle; }
+    th { background:var(--surface-2); color:var(--muted); text-transform:uppercase; letter-spacing:.07em; font-size:8px; }
+    tbody tr:hover { background:var(--surface-2); }
+    .observation-mobile { display:none; padding:10px; }
+    .observation-card { padding:13px; border:1px solid var(--line); border-radius:14px; margin-bottom:7px; background:var(--surface-2); }
+    .observation-card-top { display:flex; justify-content:space-between; gap:10px; }
+    .observation-card strong { font-size:11px; }
+    .observation-card-grid { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-top:9px; }
+    .observation-card-grid span { display:block; color:var(--muted); font-size:8px; }
+    .observation-card-grid b { display:block; margin-top:2px; font-size:9px; }
+
+    /* =========================================================
+       PROFILE / SETTINGS / INFO
+       ========================================================= */
+    .profile-grid { display:grid; grid-template-columns: .75fr 1.25fr; gap:16px; }
+    .profile-card { padding:22px; }
+    .profile-big { width:86px; height:86px; border-radius:24px; display:grid; place-items:center; background:var(--red-100); color:var(--red-700); font-size:28px; font-weight:800; overflow:hidden; }
+    .profile-big img { width:100%; height:100%; object-fit:cover; }
+    .profile-name-big { margin-top:16px; font-size:23px; font-weight:800; letter-spacing:-.04em; }
+    .profile-email { margin-top:4px; color:var(--muted); font-size:11px; }
+    .profile-chip-row { display:flex; gap:6px; flex-wrap:wrap; margin-top:13px; }
+    .profile-form { display:grid; grid-template-columns:1fr 1fr; gap:13px; }
+    .profile-form .full { grid-column:1/-1; }
+    .settings-list { display:grid; gap:10px; }
+    .setting-row { padding:14px; display:flex; align-items:center; justify-content:space-between; gap:15px; border:1px solid var(--line); border-radius:15px; background:var(--surface-2); }
+    .setting-copy strong { display:block; font-size:11px; }
+    .setting-copy span { display:block; color:var(--muted); font-size:9px; margin-top:3px; max-width:450px; }
+    .switch { position:relative; width:42px; height:24px; flex:0 0 auto; }
+    .switch input { opacity:0; width:0; height:0; }
+    .switch-track { position:absolute; inset:0; background:#c7c9ce; border-radius:999px; transition:.2s; cursor:pointer; }
+    .switch-track::after { content:""; position:absolute; width:18px; height:18px; left:3px; top:3px; border-radius:50%; background:white; box-shadow:0 2px 6px rgba(0,0,0,.18); transition:.2s; }
+    .switch input:checked + .switch-track { background:var(--red-600); }
+    .switch input:checked + .switch-track::after { transform:translateX(18px); }
+    .info-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; }
+    .info-card { padding:18px; }
+    .info-card h3 { margin:10px 0 5px; font-size:13px; }
+    .info-card p { margin:0; color:var(--muted); font-size:10px; line-height:1.55; }
+    .steps { display:grid; gap:7px; margin-top:9px; }
+    .step { display:flex; gap:8px; align-items:flex-start; font-size:10px; }
+    .step-no { width:20px; height:20px; border-radius:7px; display:grid; place-items:center; background:var(--red-50); color:var(--red-700); font-weight:800; flex:0 0 auto; font-size:9px; }
+    .faq-list { display:grid; gap:7px; }
+    details { border:1px solid var(--line); border-radius:14px; background:var(--surface-2); overflow:hidden; }
+    summary { cursor:pointer; list-style:none; padding:14px 15px; font-weight:800; font-size:11px; }
+    summary::-webkit-details-marker { display:none; }
+    details p { padding:0 15px 15px; margin:0; color:var(--muted); font-size:10px; line-height:1.55; }
+
+    /* =========================================================
+       ALARM + TOAST + DROPDOWN
+       ========================================================= */
+    #alarm-banner { position:fixed; top:92px; left:50%; transform:translate(-50%, -12px); width:min(680px, calc(100% - 28px)); padding:13px 15px; border-radius:16px; background:var(--danger); color:#fff; display:flex; align-items:center; justify-content:space-between; gap:12px; box-shadow:0 18px 45px rgba(163,34,49,.28); z-index:900; opacity:0; pointer-events:none; transition:.25s var(--ease); }
+    #alarm-banner.active { opacity:1; transform:translate(-50%, 0); pointer-events:auto; animation:alarm-pulse 1.2s ease-in-out infinite; }
+    .alarm-copy { display:flex; align-items:center; gap:10px; min-width:0; }
+    .alarm-copy strong { font-size:12px; }
+    .alarm-copy span { display:block; font-size:9px; opacity:.78; margin-top:2px; }
+    #alarm-banner .btn { min-height:36px; background:#fff; color:var(--danger); }
+    @keyframes alarm-pulse { 0%,100% { box-shadow:0 18px 45px rgba(163,34,49,.18); } 50% { box-shadow:0 18px 60px rgba(163,34,49,.38); } }
+
+    .toast-stack { position:fixed; top:18px; right:18px; z-index:1100; display:grid; gap:8px; pointer-events:none; }
+    .toast { width:min(360px, calc(100vw - 36px)); padding:12px 13px; border-radius:14px; border:1px solid var(--line); background:var(--surface); box-shadow:var(--shadow-md); display:flex; align-items:flex-start; gap:10px; animation:toast-in .22s var(--ease); }
+    .toast .stat-icon { width:30px; height:30px; border-radius:9px; flex:0 0 auto; }
+    .toast strong { font-size:10px; display:block; }
+    .toast span { font-size:9px; color:var(--muted); display:block; margin-top:2px; }
+    @keyframes toast-in { from { opacity:0; transform:translateX(12px); } to { opacity:1; transform:none; } }
+
+    .profile-menu { position:absolute; top:58px; right:22px; width:min(280px, calc(100vw - 24px)); background:var(--surface); border:1px solid var(--line); border-radius:18px; box-shadow:var(--shadow-lg); padding:8px; z-index:500; animation:menu-in .18s var(--ease); }
+    @keyframes menu-in { from { opacity:0; transform:translateY(-6px) scale(.99); } to { opacity:1; transform:none; } }
+    .profile-menu-head { padding:9px 10px 11px; border-bottom:1px solid var(--line); margin-bottom:6px; }
+    .profile-menu-head strong { display:block; font-size:11px; }
+    .profile-menu-head span { display:block; color:var(--muted); font-size:9px; margin-top:2px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .menu-item { width:100%; min-height:40px; display:flex; align-items:center; gap:9px; padding:0 10px; border:0; border-radius:11px; background:transparent; color:var(--text); text-align:left; font-weight:700; font-size:10px; }
+    .menu-item:hover { background:var(--surface-2); }
+    .menu-item.danger { color:var(--danger); }
+
+    #mobile-nav { display:none; }
+    #drawer-backdrop { display:none; }
+
+    /* =========================================================
+       LEAFLET TUNING
+       ========================================================= */
+    .leaflet-container { background:var(--surface-2); font-family:Inter, sans-serif; }
+    .leaflet-control-zoom a { background:var(--surface); color:var(--text); border-color:var(--line); }
+    .leaflet-control-attribution { font-size:7px; }
+    .motor-pin { width: 30px; height:30px; border-radius:10px 10px 10px 3px; transform:rotate(-45deg); background:var(--red-600); border:3px solid #fff; box-shadow:0 7px 18px rgba(167,40,53,.3); display:grid; place-items:center; }
+    .motor-pin span { transform:rotate(45deg); color:white; font-weight:800; font-size:11px; }
+
+    /* =========================================================
+       RESPONSIVE
+       ========================================================= */
+    @media (max-width: 1180px) {
+      :root { --sidebar: 220px; }
+      .dashboard-hero, .vehicle-layout, .location-layout, .security-layout, .profile-grid { grid-template-columns:1fr; }
+      .scenario-grid { grid-template-columns:repeat(3,1fr); }
+      .info-grid { grid-template-columns:1fr 1fr; }
+    }
+
+    @media (max-width: 900px) {
+      #app-shell { grid-template-columns:1fr; }
+      .sidebar { display:none; }
+      .topbar { padding:0 15px; }
+      .mobile-brand { display:flex; }
+      .page-context { display:none; }
+      .content { padding:18px 15px 92px; }
+      #mobile-nav { position:fixed; display:grid; grid-template-columns:repeat(6,1fr); left:10px; right:10px; bottom:10px; padding:6px; background:color-mix(in srgb, var(--surface) 92%, transparent); backdrop-filter:blur(16px); border:1px solid var(--line); box-shadow:var(--shadow-lg); border-radius:18px; z-index:800; padding-bottom:calc(6px + env(safe-area-inset-bottom)); }
+      .mobile-nav-item { min-height:49px; border:0; border-radius:12px; background:transparent; color:var(--muted); display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px; font-weight:700; font-size:7px; }
+      .mobile-nav-item.active { color:var(--red-700); background:var(--red-50); }
+      .mobile-nav-more { color:var(--text); }
+      .stat-grid { grid-template-columns:repeat(2,1fr); }
+      .dashboard-grid { grid-template-columns:1fr; }
+      #dashboard-map { height:250px; }
+      #three-viewer, #three-canvas { min-height:430px; }
+      #main-map { height:480px; }
+      .topbar-right .live-status { display:none; }
+      .profile-name { display:none; }
+      .scenario-grid { grid-template-columns:1fr 1fr; }
+      .info-grid { grid-template-columns:1fr; }
+      .profile-form { grid-template-columns:1fr; }
+      .profile-form .full { grid-column:auto; }
+    }
+
+    @media (max-width: 620px) {
+      #welcome-screen { padding:14px; }
+      .welcome-shell { min-height: calc(100vh - 28px); }
+      .welcome-art { width:min(290px,72vw); margin-top:24px; }
+      .welcome-copy h1 { font-size:clamp(40px, 15vw, 62px); }
+      .welcome-copy p { font-size:13px; }
+      .welcome-footer { width:100%; }
+      .welcome-footer .btn { width:min(320px,100%); }
+      .topbar { height:64px; }
+      .topbar-right { gap:5px; }
+      .icon-btn { width:39px; height:39px; }
+      .content { padding:15px 12px 92px; }
+      .view-head { align-items:flex-start; margin-bottom:15px; }
+      .view-head-actions { flex-wrap:wrap; }
+      .section-title { font-size:21px; }
+      .hero-panel, .security-panel { min-height:225px; padding:19px; border-radius:21px; }
+      .hero-panel h2 { font-size:30px; }
+      .hero-actions { left:19px; bottom:18px; }
+      .stat-card { padding:13px; }
+      .stat-value { font-size:16px; }
+      .security-score { width:78px; height:78px; border-width:7px; }
+      .security-score::before { inset:-7px; }
+      .activity-card, .mini-map { min-height:auto; }
+      .scenario-grid { grid-template-columns:1fr; }
+      .scenario { min-height:130px; }
+      .security-actions { grid-template-columns:1fr; }
+      #main-map { height:410px; }
+      #three-viewer, #three-canvas { min-height:370px; }
+      .vehicle-meta { grid-template-columns:1fr 1fr; }
+      .filter-left { width:100%; }
+      .filter-left .select { flex:1; min-width:120px; }
+      .filter-row > .btn { width:100%; }
+      .observation-table { display:none; }
+      .observation-mobile { display:block; }
+      .toast-stack { top:auto; bottom:78px; right:10px; }
+      .profile-menu { right:8px; top:53px; }
+      #alarm-banner { top:73px; }
+    }
+
+    @media (max-width: 390px) {
+      #mobile-nav { gap:1px; }
+      .mobile-nav-item { font-size:6.5px; }
+      .mobile-brand strong { display:none; }
+      .vehicle-meta { grid-template-columns:1fr; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { scroll-behavior:auto !important; animation-duration:.001ms !important; animation-iteration-count:1 !important; transition-duration:.001ms !important; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- =======================================================
+       WELCOME
+       ======================================================= -->
+  <section id="welcome-screen" aria-label="Welcome screen">
+    <div class="welcome-shell">
+      <div class="welcome-brand">
+        <div class="brand-mark" aria-hidden="true">M</div>
+        <div class="brand-word">MOTRA</div>
+      </div>
+
+      <div class="welcome-copy">
+        <div class="welcome-kicker">Smart Motorcycle Security &amp; Monitoring</div>
+        <h1>Welcome to MOTRA</h1>
+        <div class="welcome-art">
+          <img id="theme-image" src="theme.png" alt="Ilustrasi utama MOTRA" onerror="this.style.display='none'; document.getElementById('theme-fallback').style.display='grid';" />
+          <div id="theme-fallback" class="theme-fallback">
+            <div class="brand-mark" style="width:58px;height:58px;border-radius:18px;font-size:22px">M</div>
+            <strong>theme.png tidak ditemukan</strong>
+            <span>Tempatkan gambar 1:1 bernama <b>theme.png</b> di samping index.html.</span>
+          </div>
+        </div>
+        <p>MOTRA membantu memantau keamanan kendaraan, lokasi, kondisi sistem, dan memberikan peringatan saat terjadi kondisi yang tidak diinginkan.</p>
+      </div>
+
+      <div class="welcome-footer">
+        <button id="start-btn" class="btn btn-primary" style="min-width:190px;">Mulai <span aria-hidden="true">→</span></button>
+        <div class="welcome-meta">Prototype frontend • data lokal tersimpan di browser</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- =======================================================
+       AUTH MODAL
+       ======================================================= -->
+  <div id="auth-overlay" class="modal-backdrop auth-modal hidden" role="dialog" aria-modal="true" aria-labelledby="auth-title">
+    <div class="modal">
+      <div class="modal-header">
+        <div>
+          <h2 id="auth-title" class="modal-title">Masuk ke MOTRA</h2>
+          <p class="modal-copy">Prototype local authentication — tidak terhubung ke server.</p>
+        </div>
+        <button class="icon-btn" data-close-modal="auth-overlay" aria-label="Tutup">×</button>
+      </div>
+      <div class="modal-body">
+        <div class="auth-tabs" role="tablist">
+          <button class="auth-tab active" data-auth-tab="login">Masuk</button>
+          <button class="auth-tab" data-auth-tab="register">Buat akun</button>
+        </div>
+        <form id="auth-form" class="auth-form">
+          <div id="name-field" class="hidden">
+            <label class="label" for="auth-name">Nama pengguna</label>
+            <input id="auth-name" class="input" autocomplete="name" placeholder="Contoh: Fadli" />
+          </div>
+          <div>
+            <label class="label" for="auth-identity">Email / username</label>
+            <input id="auth-identity" class="input" required autocomplete="username" placeholder="nama@email.com" />
+          </div>
+          <div>
+            <label class="label" for="auth-password">Password</label>
+            <input id="auth-password" class="input" type="password" required autocomplete="current-password" placeholder="Minimal 6 karakter" minlength="6" />
+          </div>
+          <button class="btn btn-primary" type="submit"><span id="auth-submit-text">Masuk</span> <span aria-hidden="true">→</span></button>
+        </form>
+        <div class="auth-switch"><span id="auth-switch-copy">Belum punya akun?</span> <button type="button" id="auth-switch-btn">Buat akun</button></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- =======================================================
+       APP
+       ======================================================= -->
+  <div id="app-shell" class="hidden">
+    <aside class="sidebar" aria-label="Navigasi utama">
+      <div class="sidebar-brand">
+        <div class="brand-mark">M</div>
+        <div><strong>MOTRA</strong><small>Vehicle Security</small></div>
+      </div>
+      <div class="nav-group">
+        <div class="nav-label">Monitoring</div>
+        <button class="nav-item active" data-view="dashboard">▦ <span>Dashboard</span></button>
+        <button class="nav-item" data-view="vehicle">◉ <span>Kendaraan</span></button>
+        <button class="nav-item" data-view="location">⌖ <span>Lokasi</span></button>
+        <button class="nav-item" data-view="security">◈ <span>Keamanan</span></button>
+        <button class="nav-item" data-view="simulation">△ <span>Simulasi</span></button>
+        <button class="nav-item" data-view="observation">▤ <span>Pengamatan</span></button>
+      </div>
+      <div class="sidebar-bottom">
+        <div class="prototype-note">
+          <b>MODE PROTOTYPE</b>
+          <p>Status, lokasi, sensor, dan histori merupakan simulasi frontend kecuali lokasi browser yang diberi izin.</p>
+        </div>
+        <button class="nav-item" data-menu-action="help">? <span>Cara Menggunakan</span></button>
+      </div>
+    </aside>
+
+    <main class="app-main">
+      <header class="topbar">
+        <div class="topbar-left">
+          <div class="mobile-brand"><div class="brand-mark">M</div><strong>MOTRA</strong></div>
+          <div class="page-context"><strong id="page-title">Dashboard</strong><span id="page-subtitle">Ringkasan sistem keamanan kendaraan</span></div>
+        </div>
+        <div class="topbar-right">
+          <div class="live-status"><span class="status-dot"></span><span id="connection-text">Prototype aktif</span></div>
+          <button class="icon-btn" id="notification-btn" aria-label="Notifikasi">!</button>
+          <button class="profile-trigger" id="profile-trigger" aria-haspopup="true" aria-expanded="false">
+            <span id="top-avatar" class="avatar">M</span><span class="profile-name" id="top-name">Pengguna</span><span class="muted">⌄</span>
+          </button>
+          <button class="icon-btn" id="mobile-more-btn" aria-label="Menu lainnya">⋮</button>
+        </div>
+        <div id="profile-menu" class="profile-menu hidden">
+          <div class="profile-menu-head"><strong id="menu-name">Pengguna</strong><span id="menu-identity">prototype@local</span></div>
+          <button class="menu-item" data-menu-action="profile">◎ <span>Profil Saya</span></button>
+          <button class="menu-item" data-menu-action="settings">⚙ <span>Pengaturan</span></button>
+          <button class="menu-item" data-menu-action="theme">◐ <span id="theme-menu-label">Mode Tampilan</span></button>
+          <button class="menu-item" data-menu-action="help">? <span>Cara Menggunakan</span></button>
+          <button class="menu-item" data-menu-action="faq">⌄ <span>FAQ</span></button>
+          <button class="menu-item" data-menu-action="about">ⓘ <span>Tentang MOTRA</span></button>
+          <button class="menu-item danger" data-menu-action="logout">↪ <span>Keluar</span></button>
+        </div>
+      </header>
+
+      <div id="alarm-banner">
+        <div class="alarm-copy"><div class="brand-mark" style="width:34px;height:34px;border-radius:10px;background:rgba(255,255,255,.14)">!</div><div><strong id="alarm-title">Peringatan keamanan</strong><span id="alarm-detail">Gangguan terdeteksi.</span></div></div>
+        <button id="silence-alarm" class="btn btn-sm">Matikan Alarm</button>
+      </div>
+
+      <div class="content">
+        <!-- DASHBOARD -->
+        <section id="view-dashboard" class="view active" data-view-section="dashboard">
+          <div class="view-head">
+            <div><div class="eyebrow">Overview</div><h1 class="section-title">Kontrol MOTRA</h1><p class="section-subtitle">Pantau kondisi motor dan respons keamanan dari satu tempat.</p></div>
+            <div class="view-head-actions"><button class="btn btn-secondary btn-sm" data-view="observation">Lihat pengamatan</button></div>
+          </div>
+
+          <div class="dashboard-hero">
+            <div class="hero-panel">
+              <span class="hero-label"><span class="status-dot"></span><span id="hero-status-label">Sistem aman</span></span>
+              <h2 id="hero-title">Motor kamu dalam kondisi aman.</h2>
+              <p id="hero-description">Semua sensor inti aktif. Perubahan kondisi akan dicatat sebagai histori simulasi.</p>
+              <div class="hero-actions">
+                <button class="btn btn-primary btn-sm" data-view="simulation">Uji simulasi</button>
+                <button class="btn btn-secondary btn-sm" data-view="location">Lihat lokasi</button>
+              </div>
+            </div>
+            <div class="card security-panel">
+              <div class="security-top"><div><span class="badge success" id="security-badge"><span class="status-dot"></span> AMAN</span><h3>Security score</h3><p>Indikator komposit prototype.</p></div><div class="security-score" id="security-score"><div><strong id="security-score-value">92</strong><small>/ 100</small></div></div></div>
+              <div><div class="progress-top"><span>Proteksi aktif</span><strong id="security-progress-label">92%</strong></div><div class="progress"><span id="security-progress" style="width:92%"></span></div></div>
+            </div>
+          </div>
+
+          <div class="stat-grid">
+            <article class="card stat-card"><div class="stat-top"><div><div class="stat-label">Status kendaraan</div><div class="stat-value" id="stat-vehicle">Parkir</div><div class="stat-foot">Update simulasi</div></div><div class="stat-icon">⌁</div></div></article>
+            <article class="card stat-card"><div class="stat-top"><div><div class="stat-label">Kunci</div><div class="stat-value" id="stat-lock">Aktif</div><div class="stat-foot">Mode keamanan siap</div></div><div class="stat-icon">▣</div></div></article>
+            <article class="card stat-card"><div class="stat-top"><div><div class="stat-label">GPS</div><div class="stat-value" id="stat-gps">Aktif</div><div class="stat-foot" id="stat-location">Malang • simulasi</div></div><div class="stat-icon">⌖</div></div></article>
+            <article class="card stat-card"><div class="stat-top"><div><div class="stat-label">Aki</div><div class="stat-value" id="stat-battery">12.6 V</div><div class="stat-foot">Kondisi normal</div></div><div class="stat-icon">▮</div></div></article>
+          </div>
+
+          <div class="dashboard-grid">
+            <div class="card activity-card"><div class="card-head"><div><h3>Aktivitas terbaru</h3><p>Peristiwa tersimpan di browser ini.</p></div><button class="btn btn-ghost btn-sm" data-view="observation">Semua</button></div><div id="dashboard-activity" class="activity-list"></div></div>
+            <div class="card mini-map"><div class="card-head"><div><h3>Lokasi motor</h3><p>Malang • data simulasi</p></div><span class="badge neutral">Default</span></div><div class="map-placeholder"><div id="dashboard-map"></div><div id="dashboard-map-fallback" class="map-fallback hidden">Peta eksternal tidak tersedia. Lokasi simulasi: Malang.</div></div><div class="map-caption"><span id="dashboard-location-text">Area Kota Malang</span><button class="btn btn-ghost btn-sm" data-view="location">Buka peta</button></div></div>
+          </div>
+        </section>
+
+        <!-- VEHICLE -->
+        <section id="view-vehicle" class="view" data-view-section="vehicle">
+          <div class="view-head"><div><div class="eyebrow">Vehicle</div><h1 class="section-title">Kendaraan</h1><p class="section-subtitle">Visualisasi 3D dan kondisi sistem kendaraan.</p></div><div class="view-head-actions"><span class="badge info">Prototype 3D</span></div></div>
+          <div class="vehicle-layout">
+            <div class="card viewer-card">
+              <div id="three-viewer">
+                <canvas id="three-canvas"></canvas>
+                <div class="viewer-overlay"><div class="model-state" id="model-state">Menyiapkan viewer 3D…</div><div class="viewer-controls"><button class="icon-btn" id="model-reset" title="Reset view">↺</button><button class="icon-btn" id="model-zoom-in" title="Zoom in">+</button><button class="icon-btn" id="model-zoom-out" title="Zoom out">−</button></div></div>
+                <div id="model-fallback" class="model-fallback hidden"><div class="model-fallback-inner"><strong>Model 3D belum dapat dimuat</strong><span id="model-fallback-copy">Three.js atau file model belum tersedia.</span><br /><code>Motor 3D/sorce/motor.obj</code><br /><span style="display:block;margin-top:9px;font-size:10px">Browser tidak membaca <b>motor.7z</b> secara langsung. Ekstrak arsip menjadi .OBJ/.MTL lalu letakkan hasilnya pada folder sorce.</span></div></div>
+              </div>
+            </div>
+            <div class="vehicle-side">
+              <div class="card vehicle-info"><div class="vehicle-name-row"><div><h2 id="vehicle-name-title">MOTRA Unit 01</h2><p class="vehicle-sub">ID <span id="vehicle-id-label">MTR-001</span></p></div><span class="badge success">Terdaftar lokal</span></div><div class="vehicle-meta"><div class="meta-tile"><span>Lokasi default</span><strong>Malang</strong></div><div class="meta-tile"><span>Mode</span><strong>Security monitoring</strong></div><div class="meta-tile"><span>Koneksi</span><strong>Frontend prototype</strong></div><div class="meta-tile"><span>Terakhir dicatat</span><strong id="vehicle-last-update">—</strong></div></div></div>
+              <div class="card"><div class="card-head"><div><h3>Kontrol viewer</h3><p>Gunakan mouse atau touch untuk memutar.</p></div></div><div style="padding:14px 20px 18px;display:grid;gap:7px"><button class="btn btn-secondary" id="model-auto-rotate">Putar otomatis</button><button class="btn btn-secondary" data-action="focus-model">Fokus kendaraan</button></div></div>
+              <div class="card"><div class="card-head"><div><h3>Status sensor</h3><p>Nilai simulasi perangkat.</p></div><span class="badge neutral">8 checks</span></div><div class="sensor-list" id="sensor-list"></div></div>
+            </div>
+          </div>
+        </section>
+
+        <!-- LOCATION -->
+        <section id="view-location" class="view" data-view-section="location">
+          <div class="view-head"><div><div class="eyebrow">Location</div><h1 class="section-title">Lokasi kendaraan</h1><p class="section-subtitle">Malang menjadi lokasi default agar prototype tetap berjalan tanpa GPS.</p></div><div class="view-head-actions"><button class="btn btn-secondary btn-sm" id="request-location">Gunakan lokasi saya</button></div></div>
+          <div class="location-layout">
+            <div class="card map-card"><div class="card-head"><div><h3>Smart location map</h3><p id="map-source-label">OpenStreetMap • lokasi motor simulasi</p></div><span class="badge info" id="map-mode-badge">Simulasi</span></div><div style="position:relative"><div id="main-map"></div><div id="main-map-fallback" class="map-fallback hidden">Leaflet tidak dapat dimuat dari CDN. Prototype tetap menggunakan koordinat simulasi Malang.</div></div><div class="map-caption" style="padding-top:12px"><span>Motor: <b id="main-map-location">Malang</b></span><span id="user-location-status">Lokasi pengguna belum digunakan</span></div></div>
+            <div class="location-side">
+              <div class="card location-card"><div class="sim-label">Lokasi default prototype</div><div class="location-current"><div class="location-pin">⌖</div><div><strong>Malang, Jawa Timur</strong><span id="coordinates-text">-7.9839, 112.6214</span><span>Lokasi dapat berubah mengikuti skenario simulasi.</span></div></div></div>
+              <div class="card location-card"><div class="card-head" style="padding:0 0 12px;border:0"><div><h3>Tempat terdekat</h3><p>Data lokal simulasi • bukan real-time</p></div></div><div class="nearby-tabs" role="tablist"><button class="nearby-tab active" data-nearby="masjid">Masjid</button><button class="nearby-tab" data-nearby="bengkel">Bengkel</button><button class="nearby-tab" data-nearby="health">Klinik</button><button class="nearby-tab" data-nearby="fuel">SPBU</button></div><div id="nearby-list" class="place-list"></div></div>
+              <div class="card location-card"><div class="card-head" style="padding:0 0 12px;border:0"><div><h3>Zona aman</h3><p>Radius pemantauan simulasi</p></div></div><div class="progress-top"><span>Radius</span><strong>500 m</strong></div><div class="progress"><span style="width:68%"></span></div><p style="font-size:9px;color:var(--muted);margin:8px 0 0">Status perpindahan zona dapat diuji melalui menu Simulasi.</p></div>
+            </div>
+          </div>
+        </section>
+
+        <!-- SECURITY -->
+        <section id="view-security" class="view" data-view-section="security">
+          <div class="view-head"><div><div class="eyebrow">Security</div><h1 class="section-title">Keamanan</h1><p class="section-subtitle">Kontrol keamanan dan diagnosa kondisi sistem.</p></div><div class="view-head-actions"><span class="badge success" id="security-view-badge">AMAN</span></div></div>
+          <div class="security-layout">
+            <div class="card security-control"><div class="large-status"><div class="status-orb" id="security-orb">✓</div><div><h2 id="security-view-title">Sistem aman</h2><p id="security-view-copy">Tidak ada gangguan yang sedang aktif.</p></div></div><div class="security-actions"><button class="security-action" id="toggle-guard"><span class="stat-icon">▣</span><span>Perlindungan aktif<small id="guard-action-label">Klik untuk menonaktifkan</small></span></button><button class="security-action" data-view="simulation"><span class="stat-icon">△</span><span>Uji respons<small>Buka skenario keamanan</small></span></button><button class="security-action" id="manual-alert"><span class="stat-icon">!</span><span>Peringatan manual<small>Picu notifikasi + histori</small></span></button><button class="security-action" id="clear-alarm"><span class="stat-icon">□</span><span>Heningkan alarm<small>Hanya saat alarm aktif</small></span></button></div><div class="security-progress"><div class="progress-top"><span>Integritas sistem</span><strong id="integrity-value">92%</strong></div><div class="progress"><span id="integrity-progress" style="width:92%"></span></div></div></div>
+            <div class="card"><div class="card-head"><div><h3>Diagnostik</h3><p>Snapshot sensor prototype.</p></div></div><div id="diagnostic-list" class="diag-list"></div></div>
+          </div>
+        </section>
+
+        <!-- SIMULATION -->
+        <section id="view-simulation" class="view" data-view-section="simulation">
+          <div class="view-head"><div><div class="eyebrow">Simulation Lab</div><h1 class="section-title">Simulasi Keamanan</h1><p class="section-subtitle">Setiap skenario mengubah state aplikasi dan menambah histori, bukan sekadar animasi.</p></div><div class="view-head-actions"><button class="btn btn-secondary btn-sm" id="reset-simulation">Kembalikan aman</button></div></div>
+          <div class="scenario-grid">
+            <button class="scenario" data-scenario="safe"><span class="scenario-icon">✓</span><span><strong>Kondisi Aman</strong><span>Motor berada dalam zona aman.</span></span><span class="badge success" style="align-self:flex-start">Normal</span></button>
+            <button class="scenario" data-scenario="vibration"><span class="scenario-icon">≈</span><span><strong>Getaran Terdeteksi</strong><span>Sensor mendeteksi vibrasi mencurigakan.</span></span><span class="badge warning" style="align-self:flex-start">Warning</span></button>
+            <button class="scenario" data-scenario="access"><span class="scenario-icon">!</span><span><strong>Percobaan Akses</strong><span>Akses tidak dikenali terdeteksi.</span></span><span class="badge danger" style="align-self:flex-start">Alert</span></button>
+            <button class="scenario" data-scenario="move"><span class="scenario-icon">⌖</span><span><strong>Kendaraan Berpindah</strong><span>Posisi motor keluar dari titik awal.</span></span><span class="badge warning" style="align-self:flex-start">Zone</span></button>
+            <button class="scenario" data-scenario="emergency"><span class="scenario-icon">×</span><span><strong>Mode Darurat</strong><span>Semua peringatan diprioritaskan.</span></span><span class="badge danger" style="align-self:flex-start">Danger</span></button>
+          </div>
+          <div class="simulation-live"><div class="sim-live-left"><span class="sim-live-light" id="sim-live-light"></span><div class="sim-live-copy"><strong id="simulation-state-title">Simulasi siap</strong><span id="simulation-state-copy">Pilih skenario untuk mengubah kondisi aplikasi.</span></div></div><span class="badge neutral" id="simulation-time">—</span></div>
+
+          <div style="display:grid;grid-template-columns:1fr .8fr;gap:16px;margin-top:16px">
+            <div class="card"><div class="card-head"><div><h3>State saat ini</h3><p>Nilai berubah bersama skenario.</p></div></div><div class="diag-list"><div class="diag-row"><div><span class="diag-name">Status keamanan</span><span class="diag-sub">Risk state</span></div><span class="badge success" id="sim-security-badge">AMAN</span></div><div class="diag-row"><div><span class="diag-name">Lokasi</span><span class="diag-sub">Vehicle position</span></div><span id="sim-location-value" style="font-size:10px;font-weight:800">Malang</span></div><div class="diag-row"><div><span class="diag-name">Alarm</span><span class="diag-sub">Audio + alert layer</span></div><span class="badge success" id="sim-alarm-badge">OFF</span></div><div class="diag-row"><div><span class="diag-name">Sensor getaran</span><span class="diag-sub">Vibration state</span></div><span class="badge success" id="sim-vibration-badge">Normal</span></div></div></div>
+            <div class="card"><div class="card-head"><div><h3>Catatan prototype</h3><p>Perilaku yang disimulasikan.</p></div></div><div class="card-pad"><p style="margin:0;color:var(--muted);font-size:10px;line-height:1.6">Alarm audio membutuhkan interaksi pengguna karena kebijakan autoplay browser. Sistem lokasi default tetap berjalan tanpa izin GPS. Data simulasi diberi label dan tidak diposisikan sebagai telemetry hardware nyata.</p></div></div>
+          </div>
+        </section>
+
+        <!-- OBSERVATION -->
+        <section id="view-observation" class="view" data-view-section="observation">
+          <div class="view-head"><div><div class="eyebrow">Observation</div><h1 class="section-title">Pengamatan</h1><p class="section-subtitle">Riwayat kondisi yang dicatat oleh prototype di browser.</p></div><div class="view-head-actions"><button class="btn btn-secondary btn-sm" id="clear-history">Hapus riwayat</button></div></div>
+          <div class="filter-row"><div class="filter-left"><select id="obs-status-filter" class="select" style="width:150px"><option value="all">Semua status</option><option value="Aman">Aman</option><option value="Peringatan">Peringatan</option><option value="Bahaya">Bahaya</option></select><select id="obs-condition-filter" class="select" style="width:180px"><option value="all">Semua kondisi</option><option value="Kendaraan diam">Kendaraan diam</option><option value="Mesin aktif">Mesin aktif</option><option value="Getaran terdeteksi">Getaran terdeteksi</option><option value="Percobaan akses">Percobaan akses</option><option value="Kendaraan berpindah">Kendaraan berpindah</option><option value="Mode darurat">Mode darurat</option></select></div><span class="badge neutral" id="obs-count">0 data</span></div>
+          <div class="card table-card"><div class="table-scroll observation-table"><table><thead><tr><th>Waktu</th><th>Kondisi</th><th>Status</th><th>Lokasi</th><th>Keterangan</th></tr></thead><tbody id="observation-body"></tbody></table></div><div id="observation-mobile" class="observation-mobile"></div></div>
+        </section>
+
+        <!-- PROFILE -->
+        <section id="view-profile" class="view" data-view-section="profile">
+          <div class="view-head"><div><div class="eyebrow">Account</div><h1 class="section-title">Profil Saya</h1><p class="section-subtitle">Data akun dan kendaraan tersimpan secara lokal.</p></div></div>
+          <div class="profile-grid">
+            <div class="card profile-card"><div id="profile-avatar" class="profile-big">M</div><div id="profile-name-big" class="profile-name-big">Pengguna</div><div id="profile-email-big" class="profile-email">prototype@local</div><div class="profile-chip-row"><span class="badge info">Frontend prototype</span><span class="badge neutral">Local session</span></div></div>
+            <div class="card profile-card"><div class="card-head" style="padding:0 0 16px;border:0"><div><h3>Edit profil</h3><p>Perubahan akan disimpan ke localStorage.</p></div></div><form id="profile-form" class="profile-form"><div class="full"><label class="label" for="profile-name">Nama pengguna</label><input id="profile-name" class="input" required /></div><div><label class="label" for="profile-email">Email / username</label><input id="profile-email" class="input" readonly /></div><div><label class="label" for="profile-vehicle-id">ID kendaraan</label><input id="profile-vehicle-id" class="input" required /></div><div class="full"><label class="label" for="profile-vehicle-name">Nama kendaraan</label><input id="profile-vehicle-name" class="input" required /></div><div class="full"><button class="btn btn-primary" type="submit">Simpan perubahan</button></div></form></div>
+          </div>
+        </section>
+
+        <!-- SETTINGS -->
+        <section id="view-settings" class="view" data-view-section="settings">
+          <div class="view-head"><div><div class="eyebrow">Preferences</div><h1 class="section-title">Pengaturan</h1><p class="section-subtitle">Hanya pengaturan yang benar-benar digunakan oleh prototype.</p></div></div>
+          <div class="settings-list">
+            <div class="card setting-row"><div class="setting-copy"><strong>Mode gelap</strong><span>Gunakan charcoal/black dengan accent merah. Preferensi disimpan lokal.</span></div><label class="switch"><input id="setting-dark" type="checkbox" /><span class="switch-track"></span></label></div>
+            <div class="card setting-row"><div class="setting-copy"><strong>Notifikasi</strong><span>Izinkan toast dan banner peringatan dari simulasi.</span></div><label class="switch"><input id="setting-notifications" type="checkbox" checked /><span class="switch-track"></span></label></div>
+            <div class="card setting-row"><div class="setting-copy"><strong>Alarm suara</strong><span>Gunakan <b>alaram.mp3</b> ketika skenario keamanan memicu alarm.</span></div><label class="switch"><input id="setting-alarm" type="checkbox" checked /><span class="switch-track"></span></label></div>
+            <div class="card setting-row"><div class="setting-copy"><strong>Lokasi default</strong><span>Jika izin GPS tidak digunakan, sistem tetap memakai Malang sebagai lokasi simulasi.</span></div><span class="badge neutral">Malang</span></div>
+            <div class="card setting-row"><div class="setting-copy"><strong>Local authentication</strong><span>Identitas prototype disimpan lokal. Ini bukan autentikasi production.</span></div><span class="badge info">Browser only</span></div>
+          </div>
+        </section>
+
+        <!-- HELP -->
+        <section id="view-help" class="view" data-view-section="help">
+          <div class="view-head"><div><div class="eyebrow">Guide</div><h1 class="section-title">Cara Menggunakan</h1><p class="section-subtitle">Mulai dari status keamanan sampai simulasi respons.</p></div></div>
+          <div class="info-grid">
+            <article class="card info-card"><div class="stat-icon">①</div><h3>Masuk</h3><p>Buat akun prototype atau masuk dengan identitas yang sudah tersimpan di browser.</p><div class="steps"><div class="step"><span class="step-no">1</span><span>Isi nama dan identitas.</span></div><div class="step"><span class="step-no">2</span><span>Setelah masuk, MOTRA menyimpan sesi lokal.</span></div></div></article>
+            <article class="card info-card"><div class="stat-icon">②</div><h3>Periksa kendaraan</h3><p>Gunakan halaman Kendaraan untuk melihat model 3D jika file hasil ekstraksi tersedia.</p><div class="steps"><div class="step"><span class="step-no">1</span><span>Putar dengan mouse/touch.</span></div><div class="step"><span class="step-no">2</span><span>Reset atau zoom viewer.</span></div></div></article>
+            <article class="card info-card"><div class="stat-icon">③</div><h3>Uji keamanan</h3><p>Pilih skenario pada Simulasi. Setiap skenario mengubah status, lokasi, alarm, dan histori.</p><div class="steps"><div class="step"><span class="step-no">1</span><span>Coba Getaran, Akses, atau Perpindahan.</span></div><div class="step"><span class="step-no">2</span><span>Matikan alarm setelah selesai.</span></div></div></article>
+          </div>
+        </section>
+
+        <!-- FAQ -->
+        <section id="view-faq" class="view" data-view-section="faq">
+          <div class="view-head"><div><div class="eyebrow">Support</div><h1 class="section-title">FAQ</h1><p class="section-subtitle">Penjelasan singkat tentang batasan prototype.</p></div></div>
+          <div class="card card-pad"><div class="faq-list">
+            <details open><summary>Apakah MOTRA benar-benar terhubung dengan motor?</summary><p>Belum. Versi ini adalah prototype frontend. Status kendaraan dan sensor merupakan simulasi lokal agar alur UX dapat diuji tanpa hardware atau backend.</p></details>
+            <details><summary>Apakah lokasi motor benar-benar real-time?</summary><p>Tidak secara default. Malang dipakai sebagai lokasi simulasi. Fitur lokasi browser hanya dijalankan ketika pengguna memilihnya, dan data tempat terdekat yang tersedia di prototype diberi label simulasi.</p></details>
+            <details><summary>Bagaimana alarm bekerja?</summary><p>Skenario simulasi yang relevan mengaktifkan banner bahaya dan mencoba memainkan <b>alaram.mp3</b>. Browser dapat menolak autoplay; karena itu pemicu dilakukan setelah interaksi pengguna.</p></details>
+            <details><summary>Apakah data tersimpan?</summary><p>Ya, beberapa preferensi, profil, kendaraan, dan histori disimpan di localStorage. Mekanisme ini bukan penyimpanan aman untuk production.</p></details>
+            <details><summary>Mengapa model 3D tidak muncul dari motor.7z?</summary><p>Browser tidak dapat memuat arsip 7z sebagai model 3D. Arsip perlu diekstrak menjadi file model seperti <b>.obj</b> dan <b>.mtl</b> serta texture, lalu hasil ekstraksi ditempatkan pada folder <b>Motor 3D/sorce/</b>.</p></details>
+          </div></div>
+        </section>
+
+        <!-- ABOUT -->
+        <section id="view-about" class="view" data-view-section="about">
+          <div class="view-head"><div><div class="eyebrow">About</div><h1 class="section-title">Tentang MOTRA</h1><p class="section-subtitle">Smart Motorcycle Security &amp; Monitoring System.</p></div></div>
+          <div class="card card-pad" style="max-width:900px"><div style="display:flex;gap:14px;align-items:flex-start"><div class="brand-mark" style="width:52px;height:52px;border-radius:16px;flex:0 0 auto">M</div><div><h2 style="margin:0;font-size:22px;letter-spacing:-.04em">MOTRA</h2><p style="margin:6px 0 0;color:var(--muted);font-size:11px;line-height:1.65">MOTRA adalah prototype konsep sistem keamanan sepeda motor cerdas yang menggabungkan monitoring kendaraan, keamanan, lokasi, notifikasi, simulasi, dan visualisasi kendaraan 3D dalam satu pengalaman web.</p></div></div><div style="height:1px;background:var(--line);margin:20px 0"></div><div class="info-grid"><div><span class="eyebrow">Security</span><p style="font-size:10px;color:var(--muted);line-height:1.55;margin:7px 0 0">Status keamanan dibuat interaktif untuk menunjukkan bagaimana sistem dapat merespons gangguan.</p></div><div><span class="eyebrow">Monitoring</span><p style="font-size:10px;color:var(--muted);line-height:1.55;margin:7px 0 0">Pengamatan dan histori memperlihatkan perubahan kondisi secara kronologis.</p></div><div><span class="eyebrow">Prototype</span><p style="font-size:10px;color:var(--muted);line-height:1.55;margin:7px 0 0">Tidak ada klaim koneksi hardware, cloud, atau telemetry real-time pada versi ini.</p></div></div></div>
+        </section>
+      </div>
+    </main>
+  </div>
+
+  <nav id="mobile-nav" aria-label="Navigasi mobile">
+    <button class="mobile-nav-item active" data-view="dashboard">▦<span>Home</span></button>
+    <button class="mobile-nav-item" data-view="vehicle">◉<span>Motor</span></button>
+    <button class="mobile-nav-item" data-view="location">⌖<span>Lokasi</span></button>
+    <button class="mobile-nav-item" data-view="security">◈<span>Aman</span></button>
+    <button class="mobile-nav-item" data-view="simulation">△<span>Simulasi</span></button>
+    <button class="mobile-nav-item mobile-nav-more" id="mobile-more-nav">⋮<span>Lainnya</span></button>
+  </nav>
+
+  <!-- Three.js legacy globals keep the static prototype usable when index.html is opened directly. -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/gh/mrdoob/three.js@r128/examples/js/controls/OrbitControls.js"></script>
+  <script src="https://cdn.jsdelivr.net/gh/mrdoob/three.js@r128/examples/js/loaders/OBJLoader.js"></script>
+  <script src="https://cdn.jsdelivr.net/gh/mrdoob/three.js@r128/examples/js/loaders/MTLLoader.js"></script>
+
+  <audio id="alarm-audio" preload="auto" src="alaram.mp3"></audio>
+  <div id="toast-stack" class="toast-stack"></div>
+
+  <script>
+    /* =========================================================
+       MOTRA — APPLICATION STATE + CONFIG
+       ========================================================= */
+    const CONFIG = {
+      storageKey: 'motra.prototype.v1',
+      defaultLocation: { lat: -7.983908, lng: 112.621391, label: 'Malang' },
+      moveLocation: { lat: -7.9684, lng: 112.6348, label: 'Malang • zona berpindah' },
+      mapZoom: 14,
+      nearby: {
+        masjid: [
+          { name: 'Masjid Simulasi A', detail: 'Masjid • data lokal', distance: '0.8 km' },
+          { name: 'Masjid Simulasi B', detail: 'Masjid • data lokal', distance: '1.4 km' },
+          { name: 'Masjid Simulasi C', detail: 'Masjid • data lokal', distance: '2.1 km' }
+        ],
+        bengkel: [
+          { name: 'Bengkel Simulasi A', detail: 'Bengkel motor • data lokal', distance: '0.6 km' },
+          { name: 'Bengkel Simulasi B', detail: 'Bengkel motor • data lokal', distance: '1.1 km' },
+          { name: 'Bengkel Simulasi C', detail: 'Bengkel motor • data lokal', distance: '2.0 km' }
+        ],
+        health: [
+          { name: 'Klinik Simulasi A', detail: 'Klinik • data lokal', distance: '1.2 km' },
+          { name: 'Rumah Sakit Simulasi', detail: 'Rumah sakit • data lokal', distance: '2.4 km' },
+          { name: 'Klinik Simulasi B', detail: 'Klinik • data lokal', distance: '2.8 km' }
+        ],
+        fuel: [
+          { name: 'SPBU Simulasi A', detail: 'SPBU • data lokal', distance: '1.0 km' },
+          { name: 'SPBU Simulasi B', detail: 'SPBU • data lokal', distance: '1.9 km' },
+          { name: 'SPBU Simulasi C', detail: 'SPBU • data lokal', distance: '2.7 km' }
+        ]
+      },
+      scenarios: {
+        safe: { status:'Aman', severity:'success', vehicle:'Parkir', lock:'Aktif', score:92, title:'Motor kamu dalam kondisi aman.', hero:'Sistem aman', description:'Semua sensor inti aktif. Tidak ada gangguan yang sedang disimulasikan.', condition:'Kendaraan diam', note:'Sistem keamanan diaktifkan', alarm:false, vibration:'Normal', location:{ lat:-7.983908, lng:112.621391, label:'Malang' } },
+        vibration: { status:'Peringatan', severity:'warning', vehicle:'Diam + getaran', lock:'Aktif', score:68, title:'Getaran mencurigakan terdeteksi.', hero:'Getaran terdeteksi', description:'Sensor simulasi membaca vibrasi yang melewati ambang normal.', condition:'Getaran terdeteksi', note:'Sensor getaran aktif → peringatan dibuat', alarm:true, vibration:'Tinggi', location:{ lat:-7.983908, lng:112.621391, label:'Malang' } },
+        access: { status:'Peringatan', severity:'warning', vehicle:'Parkir', lock:'Percobaan akses', score:61, title:'Ada percobaan akses yang tidak dikenali.', hero:'Akses tidak dikenali', description:'Sistem mensimulasikan akses tanpa otorisasi yang tersimpan.', condition:'Percobaan akses', note:'Akses tidak dikenali → peringatan dibuat', alarm:true, vibration:'Normal', location:{ lat:-7.983908, lng:112.621391, label:'Malang' } },
+        move: { status:'Peringatan', severity:'warning', vehicle:'Berpindah', lock:'Aktif', score:54, title:'Posisi kendaraan berubah dari titik awal.', hero:'Zona berubah', description:'Lokasi simulasi berpindah untuk menguji deteksi perubahan zona.', condition:'Kendaraan berpindah', note:'Kendaraan keluar dari titik awal simulasi', alarm:true, vibration:'Normal', location:{ lat:-7.9684, lng:112.6348, label:'Malang • zona berpindah' } },
+        emergency: { status:'Bahaya', severity:'danger', vehicle:'Darurat', lock:'Gangguan', score:28, title:'Mode darurat aktif.', hero:'BAHAYA', description:'Beberapa sinyal keamanan diprioritaskan dan alarm diaktifkan.', condition:'Mode darurat', note:'Mode darurat → alarm + peringatan prioritas', alarm:true, vibration:'Tinggi', location:{ lat:-7.9684, lng:112.6348, label:'Malang • zona darurat' } }
+      }
+    };
+
+    const DEFAULT_STATE = {
+      loggedIn: false,
+      user: { name:'Pengguna', identity:'prototype@local' },
+      vehicle: { id:'MTR-001', name:'MOTRA Unit 01' },
+      theme:'light',
+      notifications:true,
+      alarmEnabled:true,
+      guardEnabled:true,
+      scenario:'safe',
+      location:CONFIG.defaultLocation,
+      history: []
+    };
+
+    let state = loadState();
+    let currentAuthMode = 'login';
+    let maps = { main:null, dashboard:null, mainMarker:null, dashboardMarker:null, userMarker:null, circle:null };
+    let three = { scene:null, camera:null, renderer:null, controls:null, motor:null, frame:0, autoRotate:false, ready:false };
+
+    function loadState(){
+      try {
+        const raw = localStorage.getItem(CONFIG.storageKey);
+        const parsed = raw ? JSON.parse(raw) : null;
+        return { ...DEFAULT_STATE, ...(parsed || {}), user:{...DEFAULT_STATE.user,...(parsed?.user||{})}, vehicle:{...DEFAULT_STATE.vehicle,...(parsed?.vehicle||{})}, location:{...CONFIG.defaultLocation,...(parsed?.location||{})}, history:Array.isArray(parsed?.history)?parsed.history:[] };
+      } catch { return structuredClone(DEFAULT_STATE); }
+    }
+    function saveState(){
+      try { localStorage.setItem(CONFIG.storageKey, JSON.stringify(state)); } catch {}
+    }
+    function initials(name){ return (name || 'M').trim().split(/\s+/).slice(0,2).map(x=>x[0]).join('').toUpperCase() || 'M'; }
+    function escapeHTML(value){ return String(value ?? '').replace(/[&<>'"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c])); }
+    function nowLabel(){ return new Intl.DateTimeFormat('id-ID',{hour:'2-digit',minute:'2-digit'}).format(new Date()); }
+    function fullTime(){ return new Intl.DateTimeFormat('id-ID',{dateStyle:'short',timeStyle:'short'}).format(new Date()); }
+
+    /* =========================================================
+       ICON-LITE + TOAST
+       ========================================================= */
+    function toast(title, message, type='info'){
+      if (!state.notifications && type !== 'danger') return;
+      const holder = document.getElementById('toast-stack');
+      const el = document.createElement('div');
+      el.className = 'toast';
+      const symbol = type === 'success' ? '✓' : type === 'danger' ? '!' : type === 'warning' ? '≈' : 'i';
+      el.innerHTML = `<div class="stat-icon">${symbol}</div><div><strong>${escapeHTML(title)}</strong><span>${escapeHTML(message)}</span></div>`;
+      holder.appendChild(el);
+      setTimeout(()=>el.remove(), 3600);
+    }
+
+    /* =========================================================
+       THEME
+       ========================================================= */
+    function applyTheme(){
+      document.documentElement.setAttribute('data-theme', state.theme === 'dark' ? 'dark' : 'light');
+      const checkbox = document.getElementById('setting-dark');
+      if (checkbox) checkbox.checked = state.theme === 'dark';
+      const label = document.getElementById('theme-menu-label');
+      if (label) label.textContent = state.theme === 'dark' ? 'Gunakan Light Mode' : 'Gunakan Dark Mode';
+      saveState();
+      setTimeout(()=>{ maps.main?.invalidateSize(); maps.dashboard?.invalidateSize(); }, 60);
+    }
+
+    /* =========================================================
+       WELCOME + AUTH
+       ========================================================= */
+    function openWelcome(){
+      document.getElementById('welcome-screen').classList.remove('hidden');
+      document.getElementById('app-shell').classList.add('hidden');
+      document.getElementById('mobile-nav').classList.add('hidden');
+    }
+    function startFlow(){
+      if (state.loggedIn){ openApp(); return; }
+      openModal('auth-overlay');
+    }
+    function openModal(id){ document.getElementById(id)?.classList.remove('hidden'); }
+    function closeModal(id){ document.getElementById(id)?.classList.add('hidden'); }
+    function setAuthMode(mode){
+      currentAuthMode = mode;
+      document.querySelectorAll('.auth-tab').forEach(btn=>btn.classList.toggle('active', btn.dataset.authTab===mode));
+      document.getElementById('name-field').classList.toggle('hidden', mode!=='register');
+      document.getElementById('auth-title').textContent = mode==='register' ? 'Buat akun MOTRA' : 'Masuk ke MOTRA';
+      document.getElementById('auth-submit-text').textContent = mode==='register' ? 'Buat akun' : 'Masuk';
+      document.getElementById('auth-switch-copy').textContent = mode==='register' ? 'Sudah punya akun?' : 'Belum punya akun?';
+      document.getElementById('auth-switch-btn').textContent = mode==='register' ? 'Masuk' : 'Buat akun';
+      const pw = document.getElementById('auth-password');
+      pw.autocomplete = mode==='register' ? 'new-password' : 'current-password';
+    }
+    async function hashString(value){
+      if (window.crypto?.subtle){
+        const data = new TextEncoder().encode(value);
+        const hash = await crypto.subtle.digest('SHA-256', data);
+        return Array.from(new Uint8Array(hash)).map(b=>b.toString(16).padStart(2,'0')).join('');
+      }
+      return btoa(unescape(encodeURIComponent(value))).slice(0,80);
+    }
+
+    async function handleAuthSubmit(event){
+      event.preventDefault();
+      const identity = document.getElementById('auth-identity').value.trim().toLowerCase();
+      const password = document.getElementById('auth-password').value;
+      const name = document.getElementById('auth-name').value.trim();
+      if (!identity || password.length < 6) return toast('Form belum lengkap','Masukkan identitas dan password minimal 6 karakter.','warning');
+      const passwordHash = await hashString(password);
+      try {
+        const accountKey = `${CONFIG.storageKey}.account`;
+        const rawAccount = localStorage.getItem(accountKey);
+        const account = rawAccount ? JSON.parse(rawAccount) : null;
+        if (currentAuthMode === 'register'){
+          if (!name) return toast('Nama diperlukan','Isi nama pengguna untuk melanjutkan.','warning');
+          if (account) return toast('Akun lokal sudah ada','Gunakan mode Masuk atau hapus data aplikasi dari browser.','warning');
+          localStorage.setItem(accountKey, JSON.stringify({ identity, name, passwordHash }));
+          state.loggedIn = true; state.user = { name, identity }; saveState();
+          closeModal('auth-overlay'); resetAuthForm(); openApp(); toast('Akun dibuat','Akun disimpan sebagai prototype local authentication.','success');
+          return;
+        }
+        if (!account) return toast('Belum ada akun','Pilih Buat akun terlebih dahulu pada browser ini.','warning');
+        if (account.identity !== identity || account.passwordHash !== passwordHash) return toast('Gagal masuk','Identitas atau password tidak cocok dengan akun lokal.','danger');
+        state.loggedIn = true; state.user = { name:account.name || identity, identity }; saveState(); closeModal('auth-overlay'); resetAuthForm(); openApp(); toast('Selamat datang kembali', `Halo ${state.user.name}.`, 'success');
+      } catch { toast('Kesalahan lokal','Data akun browser tidak dapat diproses.','danger'); }
+    }
+    function resetAuthForm(){ document.getElementById('auth-form').reset(); setAuthMode('login'); }
+
+    function openApp(){
+      applyTheme();
+      document.getElementById('welcome-screen').classList.add('hidden');
+      document.getElementById('app-shell').classList.remove('hidden');
+      document.getElementById('mobile-nav').classList.remove('hidden');
+      renderUser(); renderVehicle(); renderSensors(); renderDiagnostics(); renderHistory(); renderObservation(); renderNearby('masjid'); updateMainState();
+      navigate('dashboard');
+      initMaps();
+      initThree();
+    }
+
+    function renderUser(){
+      const init = initials(state.user.name);
+      document.getElementById('top-avatar').textContent = init;
+      document.getElementById('top-name').textContent = state.user.name;
+      document.getElementById('menu-name').textContent = state.user.name;
+      document.getElementById('menu-identity').textContent = state.user.identity;
+      document.getElementById('profile-avatar').textContent = init;
+      document.getElementById('profile-name-big').textContent = state.user.name;
+      document.getElementById('profile-email-big').textContent = state.user.identity;
+      document.getElementById('profile-name').value = state.user.name;
+      document.getElementById('profile-email').value = state.user.identity;
+      document.getElementById('profile-vehicle-id').value = state.vehicle.id;
+      document.getElementById('profile-vehicle-name').value = state.vehicle.name;
+      document.getElementById('setting-notifications').checked = state.notifications;
+      document.getElementById('setting-alarm').checked = state.alarmEnabled;
+    }
+    function renderVehicle(){
+      document.getElementById('vehicle-name-title').textContent = state.vehicle.name;
+      document.getElementById('vehicle-id-label').textContent = state.vehicle.id;
+      document.getElementById('vehicle-last-update').textContent = state.history[0]?.time || 'Belum ada';
+    }
+
+    /* =========================================================
+       NAVIGATION
+       ========================================================= */
+    const VIEW_META = {
+      dashboard:{ title:'Dashboard', subtitle:'Ringkasan sistem keamanan kendaraan' },
+      vehicle:{ title:'Kendaraan', subtitle:'Visualisasi 3D dan kondisi kendaraan' },
+      location:{ title:'Lokasi', subtitle:'Peta Malang dan fasilitas sekitar' },
+      security:{ title:'Keamanan', subtitle:'Kontrol dan diagnosa sistem' },
+      simulation:{ title:'Simulasi', subtitle:'Uji respons sistem secara interaktif' },
+      observation:{ title:'Pengamatan', subtitle:'Riwayat aktivitas dan kondisi' },
+      profile:{ title:'Profil Saya', subtitle:'Identitas dan kendaraan lokal' },
+      settings:{ title:'Pengaturan', subtitle:'Preferensi aplikasi' },
+      help:{ title:'Cara Menggunakan', subtitle:'Panduan singkat penggunaan MOTRA' },
+      faq:{ title:'FAQ', subtitle:'Jawaban tentang prototype' },
+      about:{ title:'Tentang MOTRA', subtitle:'Mengenal konsep aplikasi' }
+    };
+    function navigate(view){
+      document.querySelectorAll('.view').forEach(s=>s.classList.toggle('active', s.dataset.viewSection===view));
+      document.querySelectorAll('.nav-item[data-view], .mobile-nav-item[data-view]').forEach(btn=>btn.classList.toggle('active', btn.dataset.view===view));
+      const meta = VIEW_META[view] || VIEW_META.dashboard;
+      document.getElementById('page-title').textContent = meta.title;
+      document.getElementById('page-subtitle').textContent = meta.subtitle;
+      closeProfileMenu();
+      if (view==='location') setTimeout(()=>{ maps.main?.invalidateSize(); }, 80);
+      if (view==='vehicle') setTimeout(()=>{ resizeThree(); }, 80);
+      window.scrollTo({top:0, behavior:'smooth'});
+    }
+    document.addEventListener('click', e=>{
+      const viewBtn = e.target.closest('[data-view]');
+      if (viewBtn){ navigate(viewBtn.dataset.view); return; }
+      const action = e.target.closest('[data-menu-action]');
+      if (action){ handleMenuAction(action.dataset.menuAction); return; }
+      const close = e.target.closest('[data-close-modal]');
+      if (close){ closeModal(close.dataset.closeModal); return; }
+      if (e.target.classList.contains('modal-backdrop')) e.target.classList.add('hidden');
+    });
+
+    function handleMenuAction(action){
+      if (action==='profile') navigate('profile');
+      if (action==='settings') navigate('settings');
+      if (action==='help') navigate('help');
+      if (action==='faq') navigate('faq');
+      if (action==='about') navigate('about');
+      if (action==='theme') { state.theme = state.theme==='dark'?'light':'dark'; applyTheme(); toast('Tema diperbarui', state.theme==='dark'?'Dark Mode aktif.':'Light Mode aktif.','success'); }
+      if (action==='logout') logout();
+    }
+    function logout(){
+      stopAlarm();
+      state.loggedIn = false; saveState(); closeProfileMenu(); openWelcome(); resetAuthForm(); toast('Sesi berakhir','Akun lokal tetap tersimpan di browser.','info');
+    }
+    function openProfileMenu(){ const el=document.getElementById('profile-menu'); el.classList.remove('hidden'); document.getElementById('profile-trigger').setAttribute('aria-expanded','true'); }
+    function closeProfileMenu(){ const el=document.getElementById('profile-menu'); if (!el) return; el.classList.add('hidden'); document.getElementById('profile-trigger')?.setAttribute('aria-expanded','false'); }
+
+    /* =========================================================
+       STATE RENDERING
+       ========================================================= */
+    function getScenario(){ return CONFIG.scenarios[state.scenario] || CONFIG.scenarios.safe; }
+    function updateMainState(){
+      const s = getScenario();
+      const isDanger = s.severity === 'danger';
+      const isWarn = s.severity === 'warning';
+      const statusColorClass = isDanger ? 'danger' : isWarn ? 'warning' : 'success';
+      const statusLabel = s.status.toUpperCase();
+      const $ = id=>document.getElementById(id);
+      $('hero-status-label').textContent = s.hero;
+      $('hero-title').textContent = s.title;
+      $('hero-description').textContent = s.description;
+      $('security-badge').className = `badge ${statusColorClass}`;
+      $('security-badge').innerHTML = `<span class="status-dot"></span> ${statusLabel}`;
+      $('security-score-value').textContent = s.score;
+      $('security-score').style.color = isDanger ? 'var(--danger)' : isWarn ? 'var(--warning)' : 'var(--success)';
+      $('security-score').style.borderColor = isDanger ? 'var(--danger-soft)' : isWarn ? 'var(--warning-soft)' : 'var(--success-soft)';
+      $('security-progress').style.width = `${s.score}%`;
+      $('security-progress-label').textContent = `${s.score}%`;
+      $('stat-vehicle').textContent = s.vehicle;
+      $('stat-lock').textContent = s.lock;
+      $('stat-location').textContent = `${s.location.label}`;
+      $('security-view-badge').className = `badge ${statusColorClass}`;
+      $('security-view-badge').innerHTML = `<span class="status-dot"></span> ${statusLabel}`;
+      $('security-view-title').textContent = isDanger ? 'Mode darurat aktif' : isWarn ? 'Peringatan terdeteksi' : 'Sistem aman';
+      $('security-view-copy').textContent = s.description;
+      $('security-orb').style.background = isDanger ? 'var(--danger-soft)' : isWarn ? 'var(--warning-soft)' : 'var(--success-soft)';
+      $('security-orb').style.color = isDanger ? 'var(--danger)' : isWarn ? 'var(--warning)' : 'var(--success)';
+      $('security-orb').textContent = isDanger ? '×' : isWarn ? '!' : '✓';
+      $('integrity-value').textContent = `${s.score}%`; $('integrity-progress').style.width=`${s.score}%`;
+      $('sim-security-badge').className = `badge ${statusColorClass}`; $('sim-security-badge').textContent=statusLabel;
+      $('sim-location-value').textContent = s.location.label;
+      $('sim-alarm-badge').className = `badge ${s.alarm ? 'danger':'success'}`; $('sim-alarm-badge').textContent = s.alarm ? 'ON':'OFF';
+      $('sim-vibration-badge').className = `badge ${s.vibration==='Tinggi'?'warning':'success'}`; $('sim-vibration-badge').textContent=s.vibration;
+      $('simulation-state-title').textContent = state.scenario==='safe' ? 'Simulasi siap' : s.hero;
+      $('simulation-state-copy').textContent = state.scenario==='safe' ? 'Pilih skenario untuk mengubah kondisi aplikasi.' : s.note;
+      $('sim-live-light').style.background = isDanger ? 'var(--danger)' : isWarn ? 'var(--warning)' : 'var(--success)';
+      $('sim-live-light').style.boxShadow = `0 0 0 5px ${isDanger ? 'var(--danger-soft)' : isWarn ? 'var(--warning-soft)' : 'var(--success-soft)'}`;
+      $('simulation-time').textContent = state.history[0]?.time || '—';
+      $('stat-battery').textContent = isDanger ? '11.8 V' : isWarn ? '12.2 V' : '12.6 V';
+      $('connection-text').textContent = isDanger ? 'Attention' : 'Prototype aktif';
+      $('hero-panel-status')?.classList.toggle('danger',isDanger);
+      renderDiagnostics(); renderSensors(); updateMapPosition(); renderHistory(); renderObservation(); renderVehicle();
+    }
+
+    function renderSensors(){
+      const s = getScenario();
+      const items = [
+        ['GPS','Lokasi kendaraan', s.location.label==='Malang'?'Aktif':'Aktif • berpindah', s.location.label==='Malang'?'success':'warning'],
+        ['VIB','Getaran', s.vibration==='Tinggi'?'Terdeteksi':'Normal', s.vibration==='Tinggi'?'warning':'success'],
+        ['LCK','Kunci digital', s.lock, s.lock==='Aktif'?'success':'danger'],
+        ['BAT','Aki', s.score<50?'11.8 V':'12.6 V', s.score<50?'warning':'success'],
+        ['NET','Koneksi', 'Lokal', 'info'],
+        ['SYS','Sensor inti', '8 / 8 aktif', 'success']
+      ];
+      document.getElementById('sensor-list').innerHTML = items.map(([abbr,label,value,kind])=>`<div class="sensor-row"><div class="sensor-left"><div class="stat-icon">${abbr}</div><div><strong>${escapeHTML(label)}</strong><span>${escapeHTML(value)}</span></div></div><span class="badge ${kind}"><span class="status-dot"></span>${kind==='success'?'OK':kind==='warning'?'CHECK':kind==='danger'?'ALERT':'LOCAL'}</span></div>`).join('');
+    }
+    function renderDiagnostics(){
+      const s=getScenario();
+      const rows=[
+        ['Sistem keamanan', s.status, s.severity],
+        ['GPS', 'Aktif', 'success'],
+        ['Sensor getaran', s.vibration==='Tinggi'?'Ambang tinggi':'Normal', s.vibration==='Tinggi'?'warning':'success'],
+        ['Kunci', s.lock, s.lock==='Aktif'?'success':'danger'],
+        ['Koneksi frontend', 'Terhubung lokal', 'info'],
+        ['Alarm', s.alarm?'Aktif':'Standby', s.alarm?'danger':'success']
+      ];
+      document.getElementById('diagnostic-list').innerHTML=rows.map(([n,v,k])=>`<div class="diag-row"><div><span class="diag-name">${escapeHTML(n)}</span><span class="diag-sub">Snapshot simulasi</span></div><span class="badge ${k==='Aman'?'success':k}">${escapeHTML(v)}</span></div>`).join('');
+    }
+
+    /* =========================================================
+       HISTORY / OBSERVATION
+       ========================================================= */
+    function addHistory(condition,status,location,note){
+      const entry={ id:Date.now()+Math.random(), time:fullTime(), shortTime:nowLabel(), condition, status, location, note };
+      state.history.unshift(entry);
+      state.history = state.history.slice(0,80);
+      saveState();
+      return entry;
+    }
+    function seedHistory(){
+      if (state.history.length) return;
+      state.history = [
+        {id:'seed-4', time:'04/10/2026, 14.20', shortTime:'14.20', condition:'GPS aktif', status:'Aman', location:'Malang', note:'Sistem lokasi simulasi aktif'},
+        {id:'seed-3', time:'04/10/2026, 14.16', shortTime:'14.16', condition:'Kunci aktif', status:'Aman', location:'Malang', note:'Mode keamanan diaktifkan'},
+        {id:'seed-2', time:'04/10/2026, 14.12', shortTime:'14.12', condition:'Kendaraan diam', status:'Aman', location:'Malang', note:'Kendaraan berada di titik default'}
+      ]; saveState();
+    }
+    function renderHistory(){
+      const list=document.getElementById('dashboard-activity');
+      if (!state.history.length){ list.innerHTML='<div style="padding:28px 0;text-align:center;color:var(--muted);font-size:10px">Belum ada histori.</div>'; return; }
+      list.innerHTML=state.history.slice(0,5).map(h=>`<div class="activity-row"><div class="activity-icon">${h.status==='Bahaya'?'×':h.status==='Peringatan'?'!':'✓'}</div><div><strong>${escapeHTML(h.condition)}</strong><span>${escapeHTML(h.note)}</span></div><div class="activity-time">${escapeHTML(h.shortTime || h.time)}</div></div>`).join('');
+    }
+    function renderObservation(){
+      const statusFilter=document.getElementById('obs-status-filter')?.value || 'all';
+      const conditionFilter=document.getElementById('obs-condition-filter')?.value || 'all';
+      const rows=state.history.filter(h=>(statusFilter==='all'||h.status===statusFilter)&&(conditionFilter==='all'||h.condition===conditionFilter));
+      document.getElementById('obs-count').textContent=`${rows.length} data`;
+      document.getElementById('observation-body').innerHTML=rows.map(h=>`<tr><td>${escapeHTML(h.time)}</td><td><b>${escapeHTML(h.condition)}</b></td><td><span class="badge ${h.status==='Bahaya'?'danger':h.status==='Peringatan'?'warning':'success'}">${escapeHTML(h.status)}</span></td><td>${escapeHTML(h.location)}</td><td>${escapeHTML(h.note)}</td></tr>`).join('') || `<tr><td colspan="5" style="text-align:center;color:var(--muted);padding:30px">Tidak ada data yang cocok.</td></tr>`;
+      document.getElementById('observation-mobile').innerHTML=rows.map(h=>`<article class="observation-card"><div class="observation-card-top"><strong>${escapeHTML(h.condition)}</strong><span class="badge ${h.status==='Bahaya'?'danger':h.status==='Peringatan'?'warning':'success'}">${escapeHTML(h.status)}</span></div><div class="observation-card-grid"><div><span>Waktu</span><b>${escapeHTML(h.time)}</b></div><div><span>Lokasi</span><b>${escapeHTML(h.location)}</b></div><div style="grid-column:1/-1"><span>Keterangan</span><b>${escapeHTML(h.note)}</b></div></div></article>`).join('') || `<div style="text-align:center;color:var(--muted);padding:20px;font-size:10px">Tidak ada data yang cocok.</div>`;
+    }
+
+    /* =========================================================
+       ALARM + SCENARIOS
+       ========================================================= */
+    function playAlarm(){
+      if (!state.alarmEnabled) return;
+      const audio=document.getElementById('alarm-audio');
+      try { audio.currentTime=0; const p=audio.play(); if (p?.catch) p.catch(()=>toast('Audio diblokir browser','Tekan Matikan Alarm atau jalankan kembali setelah interaksi pengguna.','warning')); } catch {}
+    }
+    function stopAlarm(){
+      const audio=document.getElementById('alarm-audio');
+      try { audio.pause(); audio.currentTime=0; } catch {}
+      document.getElementById('alarm-banner').classList.remove('active');
+    }
+    function showAlarm(scenario){
+      const s=CONFIG.scenarios[scenario];
+      document.getElementById('alarm-title').textContent = s.status==='Bahaya'?'Mode darurat aktif':'Peringatan keamanan';
+      document.getElementById('alarm-detail').textContent = s.description;
+      document.getElementById('alarm-banner').classList.add('active');
+      playAlarm();
+    }
+    function runScenario(key){
+      const s=CONFIG.scenarios[key];
+      if (!s) return;
+      state.scenario=key; state.location=s.location;
+      addHistory(s.condition, s.status, s.location.label, s.note);
+      saveState(); updateMainState();
+      document.getElementById('simulation-state-time')?.remove();
+      if (s.alarm){ showAlarm(key); toast(s.status, s.note, s.severity); } else { stopAlarm(); toast('Kondisi aman','Sistem dikembalikan ke status normal.','success'); }
+      if (key==='move') toast('Lokasi berubah','Marker motor dipindahkan di peta simulasi.','warning');
+      navigate('simulation');
+    }
+
+    /* =========================================================
+       SECURITY CONTROLS
+       ========================================================= */
+    function toggleGuard(){
+      state.guardEnabled=!state.guardEnabled; saveState();
+      toast(state.guardEnabled?'Perlindungan aktif':'Perlindungan dinonaktifkan', state.guardEnabled?'Security monitoring kembali aktif.':'Mode keamanan dimatikan secara lokal.','info');
+      document.getElementById('guard-action-label').textContent=state.guardEnabled?'Klik untuk menonaktifkan':'Klik untuk mengaktifkan';
+    }
+    function manualAlert(){
+      state.scenario='access'; state.location=CONFIG.defaultLocation; addHistory('Percobaan akses','Peringatan','Malang','Peringatan manual dipicu pengguna'); saveState(); updateMainState(); showAlarm('access'); toast('Peringatan manual','Alarm dan status diperbarui.','warning');
+    }
+
+    /* =========================================================
+       LOCATION + LEAFLET
+       ========================================================= */
+    function createMotorIcon(){
+      if (!window.L) return null;
+      return L.divIcon({ className:'', html:'<div class="motor-pin"><span>M</span></div>', iconSize:[30,30], iconAnchor:[15,25], popupAnchor:[0,-22] });
+    }
+    function initMaps(){
+      if (!window.L){
+        document.getElementById('main-map-fallback').classList.remove('hidden');
+        document.getElementById('dashboard-map-fallback').classList.remove('hidden');
+        return;
+      }
+      const center=[state.location.lat,state.location.lng];
+      if (!maps.main){
+        maps.main=L.map('main-map',{zoomControl:true,scrollWheelZoom:true}).setView(center, CONFIG.mapZoom);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'© OpenStreetMap contributors'}).addTo(maps.main);
+        maps.mainMarker=L.marker(center,{icon:createMotorIcon()}).addTo(maps.main).bindPopup('<b>MOTRA</b><br>Lokasi kendaraan simulasi');
+        maps.circle=L.circle(center,{radius:500,color:'#a72835',weight:1,fillColor:'#bd3a45',fillOpacity:.07}).addTo(maps.main);
+      }
+      if (!maps.dashboard){
+        maps.dashboard=L.map('dashboard-map',{zoomControl:false,dragging:false,touchZoom:false,scrollWheelZoom:false,doubleClickZoom:false,boxZoom:false,keyboard:false}).setView(center,14);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'© OSM'}).addTo(maps.dashboard);
+        maps.dashboardMarker=L.marker(center,{icon:createMotorIcon()}).addTo(maps.dashboard);
+      }
+      updateMapPosition();
+    }
+    function updateMapPosition(){
+      if (!window.L || !state.location) return;
+      const p=[state.location.lat,state.location.lng];
+      maps.main?.setView(p, maps.main.getZoom(),{animate:true}); maps.mainMarker?.setLatLng(p); maps.circle?.setLatLng(p);
+      maps.dashboard?.setView(p,14,{animate:true}); maps.dashboardMarker?.setLatLng(p);
+      const co=`${state.location.lat.toFixed(4)}, ${state.location.lng.toFixed(4)}`;
+      document.getElementById('coordinates-text').textContent=co;
+      document.getElementById('main-map-location').textContent=state.location.label;
+      document.getElementById('dashboard-location-text').textContent=state.location.label;
+    }
+    function renderNearby(type){
+      document.querySelectorAll('.nearby-tab').forEach(btn=>btn.classList.toggle('active', btn.dataset.nearby===type));
+      const icons={masjid:'⌂',bengkel:'⚙',health:'+',fuel:'▮'};
+      document.getElementById('nearby-list').innerHTML=CONFIG.nearby[type].map(place=>`<div class="place-item"><div class="place-icon">${icons[type]}</div><div><strong>${escapeHTML(place.name)}</strong><span>${escapeHTML(place.detail)}</span></div><div class="place-distance">${escapeHTML(place.distance)}</div></div>`).join('');
+    }
+    function requestUserLocation(){
+      if (!navigator.geolocation){ return toast('GPS tidak tersedia','Browser ini tidak menyediakan Geolocation API. Tetap menggunakan Malang.','warning'); }
+      navigator.geolocation.getCurrentPosition(pos=>{
+        if (!maps.main || !window.L) return;
+        const p=[pos.coords.latitude,pos.coords.longitude];
+        if (maps.userMarker) maps.userMarker.setLatLng(p); else maps.userMarker=L.marker(p).addTo(maps.main).bindPopup('<b>Lokasi saya</b><br>Dipilih melalui izin browser.');
+        maps.main.setView(p,15,{animate:true});
+        document.getElementById('user-location-status').textContent='Lokasi pengguna aktif';
+        toast('Lokasi digunakan','Marker pengguna ditampilkan pada peta.','success');
+      }, ()=>toast('Izin lokasi tidak tersedia','MOTRA kembali menggunakan lokasi simulasi Malang.','warning'),{enableHighAccuracy:false,timeout:7000,maximumAge:60000});
+    }
+
+    /* =========================================================
+       THREE.JS / OBJ LOADER
+       ========================================================= */
+    async function initThree(){
+      const stateEl=document.getElementById('model-state');
+      const fallback=document.getElementById('model-fallback');
+      const canvas=document.getElementById('three-canvas');
+      try {
+        if (!window.THREE || !window.THREE.OrbitControls || !window.THREE.OBJLoader || !window.THREE.MTLLoader) throw new Error('Three.js/loader CDN tidak tersedia');
+        const THREE=window.THREE;
+        three.THREE=THREE; three.OBJLoader=THREE.OBJLoader; three.MTLLoader=THREE.MTLLoader;
+        three.scene=new THREE.Scene();
+        three.scene.background=new THREE.Color(getComputedStyle(document.documentElement).getPropertyValue('--surface-2').trim() || '#f8f8f7');
+        three.camera=new THREE.PerspectiveCamera(36,1,.1,1000); three.camera.position.set(4.6,2.7,5.7);
+        three.renderer=new THREE.WebGLRenderer({canvas,antialias:true,alpha:true}); three.renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,2)); three.renderer.setSize(canvas.clientWidth||640, canvas.clientHeight||520,false);
+        if ('outputEncoding' in three.renderer) three.renderer.outputEncoding=THREE.sRGBEncoding;
+        if ('toneMapping' in three.renderer) three.renderer.toneMapping=THREE.ACESFilmicToneMapping;
+        if ('toneMappingExposure' in three.renderer) three.renderer.toneMappingExposure=1.15;
+        three.controls=new THREE.OrbitControls(three.camera,canvas); three.controls.enableDamping=true; three.controls.minDistance=2.2; three.controls.maxDistance=10; three.controls.target.set(0,.5,0);
+        const hemi=new THREE.HemisphereLight(0xffffff,0x444444,2.2); three.scene.add(hemi);
+        const key=new THREE.DirectionalLight(0xffffff,3.3); key.position.set(4,6,5); three.scene.add(key);
+        const fill=new THREE.DirectionalLight(0xffd7dc,1.3); fill.position.set(-4,2,-2); three.scene.add(fill);
+        const ground=new THREE.Mesh(new THREE.CircleGeometry(5.2,64),new THREE.MeshBasicMaterial({color:0x000000,transparent:true,opacity:.035,side:THREE.DoubleSide})); ground.rotation.x=-Math.PI/2; ground.position.y=-.8; three.scene.add(ground);
+        three.ready=true; stateEl.textContent='Viewer 3D aktif';
+        await loadOBJModel(THREE.OBJLoader,THREE.MTLLoader,THREE);
+        renderThree(); resizeThree();
+      } catch (error){
+        console.warn('[MOTRA] Three.js/OBJ gagal dimuat:',error);
+        stateEl.textContent='3D engine tidak tersedia'; fallback.classList.remove('hidden'); canvas.style.display='none';
+      }
+    }
+    async function loadOBJModel(OBJLoader,MTLLoader,THREE){
+      // The model is expected to be extracted from motor.7z. Texture lookup first tries the shared textures folder.
+      const candidates=[
+        {obj:'Motor 3D/sorce/motor.obj',mtl:'Motor 3D/sorce/motor.mtl'},
+        {obj:'Motor 3D/sorce/model.obj',mtl:'Motor 3D/sorce/model.mtl'},
+        {obj:'Motor 3D/sorce/motor/Motor.obj',mtl:'Motor 3D/sorce/motor/Motor.mtl'}
+      ];
+      for (const candidate of candidates){
+        try {
+          let materials=null;
+          try {
+            materials=await new Promise((resolve,reject)=>{ const loader=new MTLLoader(); loader.setPath(candidate.mtl.slice(0,candidate.mtl.lastIndexOf('/')+1)); loader.setResourcePath('Motor 3D/textures/'); loader.load(candidate.mtl.split('/').pop(),m=>resolve(m),undefined,reject); });
+            materials.preload();
+          } catch {
+            try {
+              materials=await new Promise((resolve,reject)=>{ const loader=new MTLLoader(); loader.setPath(candidate.mtl.slice(0,candidate.mtl.lastIndexOf('/')+1)); loader.load(candidate.mtl.split('/').pop(),m=>resolve(m),undefined,reject); });
+              materials.preload();
+            } catch {}
+          }
+          const obj=await new Promise((resolve,reject)=>{ const loader=new OBJLoader(); if(materials) loader.setMaterials(materials); loader.load(candidate.obj,o=>resolve(o),undefined,reject); });
+          normalizeModel(obj,THREE);
+          three.scene.add(obj); three.motor=obj; document.getElementById('model-fallback').classList.add('hidden'); document.getElementById('model-state').textContent='Model motor dimuat'; return;
+        } catch {}
+      }
+      document.getElementById('model-state').textContent='Menunggu hasil ekstraksi model'; document.getElementById('model-fallback').classList.remove('hidden');
+    }
+    function renderThree(){
+      if (!three.ready) return;
+      const loop=()=>{
+        three.frame=requestAnimationFrame(loop);
+        if (three.autoRotate && three.motor) three.motor.rotation.y+=.005;
+        three.controls?.update(); three.renderer?.render(three.scene,three.camera);
+      }; loop();
+    }
+    function resizeThree(){ if(!three.ready) return; const canvas=document.getElementById('three-canvas'); const w=canvas.clientWidth||600, h=canvas.clientHeight||520; three.camera.aspect=w/h; three.camera.updateProjectionMatrix(); three.renderer.setSize(w,h,false); }
+    function resetModel(){ if(!three.ready) return; three.camera.position.set(4.6,2.7,5.7); three.controls.target.set(0,.5,0); three.controls.update(); }
+    function zoomModel(mult){ if(!three.ready) return; const dir=new three.THREE.Vector3().subVectors(three.camera.position,three.controls.target); dir.multiplyScalar(mult); const dist=dir.length(); if(dist>=2.2&&dist<=10) three.camera.position.copy(three.controls.target).add(dir); three.controls.update(); }
+
+    /* =========================================================
+       PROFILE + SETTINGS
+       ========================================================= */
+    function saveProfile(event){
+      event.preventDefault();
+      state.user.name=document.getElementById('profile-name').value.trim() || 'Pengguna';
+      state.vehicle.id=document.getElementById('profile-vehicle-id').value.trim() || 'MTR-001';
+      state.vehicle.name=document.getElementById('profile-vehicle-name').value.trim() || 'MOTRA Unit 01';
+      saveState(); renderUser(); renderVehicle(); toast('Profil diperbarui','Perubahan tersimpan di browser.','success');
+    }
+    function syncSettings(){
+      state.notifications=document.getElementById('setting-notifications').checked;
+      state.alarmEnabled=document.getElementById('setting-alarm').checked;
+      state.theme=document.getElementById('setting-dark').checked?'dark':'light';
+      saveState(); applyTheme(); toast('Pengaturan disimpan','Preferensi lokal telah diperbarui.','success');
+    }
+
+    /* =========================================================
+       DOM EVENTS
+       ========================================================= */
+    document.getElementById('start-btn').addEventListener('click',startFlow);
+    document.getElementById('auth-form').addEventListener('submit',handleAuthSubmit);
+    document.querySelectorAll('.auth-tab').forEach(btn=>btn.addEventListener('click',()=>setAuthMode(btn.dataset.authTab)));
+    document.getElementById('auth-switch-btn').addEventListener('click',()=>setAuthMode(currentAuthMode==='login'?'register':'login'));
+    document.getElementById('profile-trigger').addEventListener('click',e=>{ e.stopPropagation(); const menu=document.getElementById('profile-menu'); menu.classList.contains('hidden')?openProfileMenu():closeProfileMenu(); });
+    document.getElementById('notification-btn').addEventListener('click',()=>{
+      const latest=state.history[0];
+      if (latest) toast(`Aktivitas: ${latest.status}`, `${latest.condition} • ${latest.shortTime || latest.time}` , latest.status==='Bahaya'?'danger':latest.status==='Peringatan'?'warning':'info');
+      else toast('Belum ada notifikasi','Sistem belum mencatat aktivitas.','info');
+    });
+    document.getElementById('mobile-more-btn').addEventListener('click',()=>openProfileMenu());
+    document.getElementById('mobile-more-nav').addEventListener('click',()=>openProfileMenu());
+    document.addEventListener('click',e=>{ if(!e.target.closest('#profile-menu') && !e.target.closest('#profile-trigger') && !e.target.closest('#mobile-more-btn')) closeProfileMenu(); });
+    document.getElementById('silence-alarm').addEventListener('click',()=>{ stopAlarm(); toast('Alarm dimatikan','Status keamanan tetap mengikuti skenario aktif.','info'); });
+    document.getElementById('clear-alarm').addEventListener('click',()=>{ if(document.getElementById('alarm-banner').classList.contains('active')){stopAlarm();toast('Alarm dimatikan','Banner peringatan ditutup.','info')}else toast('Tidak ada alarm','Tidak ada alarm aktif saat ini.','info'); });
+    document.getElementById('toggle-guard').addEventListener('click',toggleGuard);
+    document.getElementById('manual-alert').addEventListener('click',manualAlert);
+    document.getElementById('request-location').addEventListener('click',requestUserLocation);
+    document.querySelectorAll('.nearby-tab').forEach(btn=>btn.addEventListener('click',()=>renderNearby(btn.dataset.nearby)));
+    document.querySelectorAll('[data-scenario]').forEach(btn=>btn.addEventListener('click',()=>runScenario(btn.dataset.scenario)));
+    document.getElementById('reset-simulation').addEventListener('click',()=>runScenario('safe'));
+    document.getElementById('clear-history').addEventListener('click',()=>{ if(confirm('Hapus seluruh riwayat pengamatan di browser ini?')){state.history=[];saveState();renderHistory();renderObservation();toast('Riwayat dihapus','Data lokal telah dibersihkan.','success');} });
+    document.getElementById('obs-status-filter').addEventListener('change',renderObservation);
+    document.getElementById('obs-condition-filter').addEventListener('change',renderObservation);
+    document.getElementById('profile-form').addEventListener('submit',saveProfile);
+    document.getElementById('setting-dark').addEventListener('change',syncSettings);
+    document.getElementById('setting-notifications').addEventListener('change',syncSettings);
+    document.getElementById('setting-alarm').addEventListener('change',syncSettings);
+    document.getElementById('model-reset').addEventListener('click',resetModel);
+    document.getElementById('model-zoom-in').addEventListener('click',()=>zoomModel(.88));
+    document.getElementById('model-zoom-out').addEventListener('click',()=>zoomModel(1.13));
+    document.getElementById('model-auto-rotate').addEventListener('click',e=>{three.autoRotate=!three.autoRotate;e.currentTarget.textContent=three.autoRotate?'Hentikan putar otomatis':'Putar otomatis';});
+    document.querySelector('[data-action="focus-model"]').addEventListener('click',()=>{resetModel();navigate('vehicle');});
+    window.addEventListener('resize',()=>{ resizeThree(); maps.main?.invalidateSize(); maps.dashboard?.invalidateSize(); });
+    document.addEventListener('keydown',e=>{ if(e.key==='Escape'){ closeProfileMenu(); document.querySelectorAll('.modal-backdrop').forEach(m=>m.classList.add('hidden')); } });
+
+    /* =========================================================
+       INITIAL BOOT
+       ========================================================= */
+    seedHistory();
+    applyTheme();
+    setAuthMode('login');
+    renderUser();
+    document.getElementById('mobile-nav').classList.add('hidden');
+    // Always show welcome first, even when a previous local session exists.
+    openWelcome();
+  </script>
+
+  <!-- Leaflet is optional; if blocked, the app shows a clear simulation fallback. -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin="anonymous" onerror="console.warn('[MOTRA] Leaflet CDN tidak tersedia; fallback peta digunakan.')"></script>
+</body>
+</html>

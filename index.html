@@ -703,7 +703,7 @@
               <div id="three-viewer">
                 <canvas id="three-canvas"></canvas>
                 <div class="viewer-overlay"><div class="model-state" id="model-state">Menyiapkan viewer 3D…</div><div class="viewer-controls"><button class="icon-btn" id="model-reset" title="Reset view">↺</button><button class="icon-btn" id="model-zoom-in" title="Zoom in">+</button><button class="icon-btn" id="model-zoom-out" title="Zoom out">−</button></div></div>
-                <div id="model-fallback" class="model-fallback hidden"><div class="model-fallback-inner"><strong>Model 3D belum dapat dimuat</strong><span id="model-fallback-copy">Three.js atau file model belum tersedia.</span><br /><code>Motor 3D/sorce/motor.obj</code><br /><span style="display:block;margin-top:9px;font-size:10px">Browser tidak membaca <b>motor.7z</b> secara langsung. Ekstrak arsip menjadi .OBJ/.MTL lalu letakkan hasilnya pada folder sorce.</span></div></div>
+                <div id="model-fallback" class="model-fallback hidden"><div class="model-fallback-inner"><strong>Model 3D belum dapat dimuat</strong><span id="model-fallback-copy">Three.js atau file model belum tersedia.</span><br /><code>Motor 3D/source/Harley-Davidson Seventy-Two HD FXT 2015.obj</code><br /><span style="display:block;margin-top:9px;font-size:10px">Model utama memakai file OBJ langsung dari folder <b>Motor 3D/source/</b>. Jika gagal dimuat, periksa struktur folder asset.</span></div></div>
               </div>
             </div>
             <div class="vehicle-side">
@@ -787,7 +787,7 @@
           <div class="view-head"><div><div class="eyebrow">Guide</div><h1 class="section-title">Cara Menggunakan</h1><p class="section-subtitle">Mulai dari status keamanan sampai simulasi respons.</p></div></div>
           <div class="info-grid">
             <article class="card info-card"><div class="stat-icon">①</div><h3>Masuk</h3><p>Buat akun prototype atau masuk dengan identitas yang sudah tersimpan di browser.</p><div class="steps"><div class="step"><span class="step-no">1</span><span>Isi nama dan identitas.</span></div><div class="step"><span class="step-no">2</span><span>Setelah masuk, MOTRA menyimpan sesi lokal.</span></div></div></article>
-            <article class="card info-card"><div class="stat-icon">②</div><h3>Periksa kendaraan</h3><p>Gunakan halaman Kendaraan untuk melihat model 3D jika file hasil ekstraksi tersedia.</p><div class="steps"><div class="step"><span class="step-no">1</span><span>Putar dengan mouse/touch.</span></div><div class="step"><span class="step-no">2</span><span>Reset atau zoom viewer.</span></div></div></article>
+            <article class="card info-card"><div class="stat-icon">②</div><h3>Periksa kendaraan</h3><p>Gunakan halaman Kendaraan untuk melihat model 3D dari file OBJ yang tersedia di folder asset.</p><div class="steps"><div class="step"><span class="step-no">1</span><span>Putar dengan mouse/touch.</span></div><div class="step"><span class="step-no">2</span><span>Reset atau zoom viewer.</span></div></div></article>
             <article class="card info-card"><div class="stat-icon">③</div><h3>Uji keamanan</h3><p>Pilih skenario pada Simulasi. Setiap skenario mengubah status, lokasi, alarm, dan histori.</p><div class="steps"><div class="step"><span class="step-no">1</span><span>Coba Getaran, Akses, atau Perpindahan.</span></div><div class="step"><span class="step-no">2</span><span>Matikan alarm setelah selesai.</span></div></div></article>
           </div>
         </section>
@@ -800,7 +800,7 @@
             <details><summary>Apakah lokasi motor benar-benar real-time?</summary><p>Tidak secara default. Malang dipakai sebagai lokasi simulasi. Fitur lokasi browser hanya dijalankan ketika pengguna memilihnya, dan data tempat terdekat yang tersedia di prototype diberi label simulasi.</p></details>
             <details><summary>Bagaimana alarm bekerja?</summary><p>Skenario simulasi yang relevan mengaktifkan banner bahaya dan mencoba memainkan <b>alaram.mp3</b>. Browser dapat menolak autoplay; karena itu pemicu dilakukan setelah interaksi pengguna.</p></details>
             <details><summary>Apakah data tersimpan?</summary><p>Ya, beberapa preferensi, profil, kendaraan, dan histori disimpan di localStorage. Mekanisme ini bukan penyimpanan aman untuk production.</p></details>
-            <details><summary>Mengapa model 3D tidak muncul dari motor.7z?</summary><p>Browser tidak dapat memuat arsip 7z sebagai model 3D. Arsip perlu diekstrak menjadi file model seperti <b>.obj</b> dan <b>.mtl</b> serta texture, lalu hasil ekstraksi ditempatkan pada folder <b>Motor 3D/sorce/</b>.</p></details>
+            <details><summary>Mengapa model 3D tidak muncul?</summary><p>Versi MOTRA ini memuat file <b>Harley-Davidson Seventy-Two HD FXT 2015.obj</b> langsung dari <b>Motor 3D/source/</b>. Jika gagal dimuat, periksa struktur folder, nama file, dan jalankan melalui Live Server/localhost agar browser dapat membaca asset lokal.</p></details>
           </div></div>
         </section>
 
@@ -1282,71 +1282,218 @@
     /* =========================================================
        THREE.JS / OBJ LOADER
        ========================================================= */
+    const MODEL_ASSETS = {
+      obj: 'Motor 3D/source/Harley-Davidson Seventy-Two HD FXT 2015.obj',
+      skin: 'Motor 3D/source/skin.jpg',
+      glass: 'Motor 3D/source/glass.png',
+      info: 'Motor 3D/source/info.txt'
+    };
+
+    function setModelFallback(message, detail=''){
+      const stateEl = document.getElementById('model-state');
+      const fallback = document.getElementById('model-fallback');
+      const copy = document.getElementById('model-fallback-copy');
+      stateEl.textContent = 'Model 3D gagal dimuat';
+      copy.textContent = detail ? `${message} ${detail}` : message;
+      fallback.classList.remove('hidden');
+    }
+
+    async function loadTexture(THREE, path, options = {}){
+      return new Promise((resolve, reject)=>{
+        const loader = new THREE.TextureLoader();
+        loader.setCrossOrigin('anonymous');
+        loader.load(
+          path,
+          texture=>{
+            texture.colorSpace = THREE.SRGBColorSpace || texture.colorSpace;
+            texture.wrapS = THREE.RepeatWrapping;
+            texture.wrapT = THREE.RepeatWrapping;
+            resolve(texture);
+          },
+          undefined,
+          reject
+        );
+      });
+    }
+
+    function applyFallbackMaterials(model, THREE, textures = {}){
+      model.traverse(child=>{
+        if (!child.isMesh) return;
+        const name = `${child.name || ''} ${child.material?.name || ''}`.toLowerCase();
+        const current = Array.isArray(child.material) ? child.material[0] : child.material;
+        const hasUV = !!child.geometry?.attributes?.uv;
+
+        let material;
+        if (name.includes('glass') || name.includes('windshield') || name.includes('lens')) {
+          material = new THREE.MeshPhysicalMaterial({
+            color: 0x9aa2aa,
+            roughness: 0.08,
+            metalness: 0.15,
+            transparent: true,
+            opacity: 0.42,
+            transmission: 0.15,
+            side: THREE.DoubleSide,
+            map: hasUV ? textures.glass || null : null
+          });
+        } else if (name.includes('wheel') || name.includes('tire') || name.includes('rubber')) {
+          material = new THREE.MeshStandardMaterial({ color: 0x17191b, roughness: 0.72, metalness: 0.04 });
+        } else if (name.includes('chrome') || name.includes('metal') || name.includes('rim') || name.includes('engine')) {
+          material = new THREE.MeshStandardMaterial({ color: 0x9aa1a7, roughness: 0.28, metalness: 0.86 });
+        } else if (name.includes('red') || name.includes('tank') || name.includes('body') || name.includes('fender')) {
+          material = new THREE.MeshStandardMaterial({ color: 0x8f2733, roughness: 0.3, metalness: 0.58 });
+        } else {
+          material = new THREE.MeshStandardMaterial({ color: 0x5c6066, roughness: 0.34, metalness: 0.7 });
+          // Keep an existing OBJ material map when the loader supplied one.
+          if (current?.map) material.map = current.map;
+        }
+        material.side = THREE.DoubleSide;
+        child.material = material;
+        child.castShadow = true;
+        child.receiveShadow = true;
+      });
+    }
+
+    function normalizeModel(model, THREE){
+      const box = new THREE.Box3().setFromObject(model);
+      const size = new THREE.Vector3();
+      const center = new THREE.Vector3();
+      box.getSize(size); box.getCenter(center);
+      const maxDim = Math.max(size.x, size.y, size.z) || 1;
+      const scale = 4.2 / maxDim;
+      model.scale.setScalar(scale);
+      model.position.sub(center.multiplyScalar(scale));
+      const scaledBox = new THREE.Box3().setFromObject(model);
+      const scaledCenter = new THREE.Vector3(); scaledBox.getCenter(scaledCenter);
+      model.position.sub(scaledCenter);
+      const finalBox = new THREE.Box3().setFromObject(model);
+      model.position.y -= finalBox.min.y - 0.15;
+    }
+
+    async function tryLoadMTL(THREE){
+      // There is currently no .mtl in the declared asset tree. Still support one
+      // automatically if the model folder receives it later.
+      if (!THREE.MTLLoader) return null;
+      const possible = 'Motor 3D/source/model.mtl';
+      try {
+        return await new Promise((resolve,reject)=>{
+          const loader = new THREE.MTLLoader();
+          loader.setPath('Motor 3D/source/');
+          loader.setResourcePath('Motor 3D/source/');
+          loader.load('model.mtl', m=>{ m.preload(); resolve(m); }, undefined, reject);
+        });
+      } catch {
+        return null;
+      }
+    }
+
     async function initThree(){
       const stateEl=document.getElementById('model-state');
       const fallback=document.getElementById('model-fallback');
       const canvas=document.getElementById('three-canvas');
       try {
-        if (!window.THREE || !window.THREE.OrbitControls || !window.THREE.OBJLoader || !window.THREE.MTLLoader) throw new Error('Three.js/loader CDN tidak tersedia');
+        if (!window.THREE || !window.THREE.OrbitControls || !window.THREE.OBJLoader) {
+          throw new Error('Three.js / OrbitControls / OBJLoader CDN tidak tersedia');
+        }
         const THREE=window.THREE;
-        three.THREE=THREE; three.OBJLoader=THREE.OBJLoader; three.MTLLoader=THREE.MTLLoader;
+        three.THREE=THREE;
         three.scene=new THREE.Scene();
         three.scene.background=new THREE.Color(getComputedStyle(document.documentElement).getPropertyValue('--surface-2').trim() || '#f8f8f7');
-        three.camera=new THREE.PerspectiveCamera(36,1,.1,1000); three.camera.position.set(4.6,2.7,5.7);
-        three.renderer=new THREE.WebGLRenderer({canvas,antialias:true,alpha:true}); three.renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,2)); three.renderer.setSize(canvas.clientWidth||640, canvas.clientHeight||520,false);
+        three.camera=new THREE.PerspectiveCamera(36,1,.1,1000);
+        three.camera.position.set(4.6,2.5,5.7);
+        three.renderer=new THREE.WebGLRenderer({canvas,antialias:true,alpha:true,powerPreference:'high-performance'});
+        three.renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,2));
+        three.renderer.setSize(canvas.clientWidth||640,canvas.clientHeight||520,false);
+        if ('outputColorSpace' in three.renderer) three.renderer.outputColorSpace=THREE.SRGBColorSpace;
         if ('outputEncoding' in three.renderer) three.renderer.outputEncoding=THREE.sRGBEncoding;
         if ('toneMapping' in three.renderer) three.renderer.toneMapping=THREE.ACESFilmicToneMapping;
         if ('toneMappingExposure' in three.renderer) three.renderer.toneMappingExposure=1.15;
-        three.controls=new THREE.OrbitControls(three.camera,canvas); three.controls.enableDamping=true; three.controls.minDistance=2.2; three.controls.maxDistance=10; three.controls.target.set(0,.5,0);
-        const hemi=new THREE.HemisphereLight(0xffffff,0x444444,2.2); three.scene.add(hemi);
-        const key=new THREE.DirectionalLight(0xffffff,3.3); key.position.set(4,6,5); three.scene.add(key);
-        const fill=new THREE.DirectionalLight(0xffd7dc,1.3); fill.position.set(-4,2,-2); three.scene.add(fill);
-        const ground=new THREE.Mesh(new THREE.CircleGeometry(5.2,64),new THREE.MeshBasicMaterial({color:0x000000,transparent:true,opacity:.035,side:THREE.DoubleSide})); ground.rotation.x=-Math.PI/2; ground.position.y=-.8; three.scene.add(ground);
-        three.ready=true; stateEl.textContent='Viewer 3D aktif';
-        await loadOBJModel(THREE.OBJLoader,THREE.MTLLoader,THREE);
-        renderThree(); resizeThree();
+        three.renderer.shadowMap.enabled=true;
+        three.controls=new THREE.OrbitControls(three.camera,canvas);
+        three.controls.enableDamping=true;
+        three.controls.dampingFactor=.08;
+        three.controls.minDistance=2.2;
+        three.controls.maxDistance=10;
+        three.controls.enablePan=true;
+        three.controls.target.set(0,.6,0);
+
+        const hemi=new THREE.HemisphereLight(0xffffff,0x3c2428,2.3); three.scene.add(hemi);
+        const key=new THREE.DirectionalLight(0xffffff,3.0); key.position.set(4,7,5); key.castShadow=true; three.scene.add(key);
+        const fill=new THREE.DirectionalLight(0xffdfe4,1.45); fill.position.set(-4,3,-2); three.scene.add(fill);
+        const rim=new THREE.DirectionalLight(0x9b3642,1.1); rim.position.set(0,4,-6); three.scene.add(rim);
+        const ground=new THREE.Mesh(new THREE.CircleGeometry(5.2,64),new THREE.MeshStandardMaterial({color:0x000000,transparent:true,opacity:.055,roughness:1,metalness:0,side:THREE.DoubleSide}));
+        ground.rotation.x=-Math.PI/2; ground.position.y=-.01; ground.receiveShadow=true; three.scene.add(ground);
+
+        stateEl.textContent='Memuat Harley-Davidson Seventy-Two…';
+        const [skinTexture, glassTexture] = await Promise.all([
+          loadTexture(THREE, MODEL_ASSETS.skin).catch(()=>null),
+          loadTexture(THREE, MODEL_ASSETS.glass).catch(()=>null)
+        ]);
+
+        let materials = await tryLoadMTL(THREE);
+        const obj = await new Promise((resolve,reject)=>{
+          const loader = new THREE.OBJLoader();
+          if (materials) loader.setMaterials(materials);
+          loader.load(
+            MODEL_ASSETS.obj,
+            resolve,
+            evt=>{
+              if (evt?.total) stateEl.textContent = `Memuat model 3D… ${Math.round(evt.loaded/evt.total*100)}%`;
+              else stateEl.textContent = 'Memuat model 3D…';
+            },
+            reject
+          );
+        });
+
+        applyFallbackMaterials(obj,THREE,{skin:skinTexture,glass:glassTexture});
+        normalizeModel(obj,THREE);
+        three.scene.add(obj);
+        three.motor=obj;
+        fallback.classList.add('hidden');
+        canvas.style.display='block';
+        stateEl.textContent='Model motor asli dimuat';
+        renderThree();
+        resizeThree();
       } catch (error){
-        console.warn('[MOTRA] Three.js/OBJ gagal dimuat:',error);
-        stateEl.textContent='3D engine tidak tersedia'; fallback.classList.remove('hidden'); canvas.style.display='none';
+        console.warn('[MOTRA] Model 3D gagal dimuat:', error);
+        canvas.style.display='none';
+        setModelFallback('Periksa file OBJ dan struktur folder asset.', 'Gunakan path Motor 3D/source/Harley-Davidson Seventy-Two HD FXT 2015.obj dan jalankan melalui Live Server/localhost.');
       }
     }
-    async function loadOBJModel(OBJLoader,MTLLoader,THREE){
-      // The model is expected to be extracted from motor.7z. Texture lookup first tries the shared textures folder.
-      const candidates=[
-        {obj:'Motor 3D/sorce/motor.obj',mtl:'Motor 3D/sorce/motor.mtl'},
-        {obj:'Motor 3D/sorce/model.obj',mtl:'Motor 3D/sorce/model.mtl'},
-        {obj:'Motor 3D/sorce/motor/Motor.obj',mtl:'Motor 3D/sorce/motor/Motor.mtl'}
-      ];
-      for (const candidate of candidates){
-        try {
-          let materials=null;
-          try {
-            materials=await new Promise((resolve,reject)=>{ const loader=new MTLLoader(); loader.setPath(candidate.mtl.slice(0,candidate.mtl.lastIndexOf('/')+1)); loader.setResourcePath('Motor 3D/textures/'); loader.load(candidate.mtl.split('/').pop(),m=>resolve(m),undefined,reject); });
-            materials.preload();
-          } catch {
-            try {
-              materials=await new Promise((resolve,reject)=>{ const loader=new MTLLoader(); loader.setPath(candidate.mtl.slice(0,candidate.mtl.lastIndexOf('/')+1)); loader.load(candidate.mtl.split('/').pop(),m=>resolve(m),undefined,reject); });
-              materials.preload();
-            } catch {}
-          }
-          const obj=await new Promise((resolve,reject)=>{ const loader=new OBJLoader(); if(materials) loader.setMaterials(materials); loader.load(candidate.obj,o=>resolve(o),undefined,reject); });
-          normalizeModel(obj,THREE);
-          three.scene.add(obj); three.motor=obj; document.getElementById('model-fallback').classList.add('hidden'); document.getElementById('model-state').textContent='Model motor dimuat'; return;
-        } catch {}
-      }
-      document.getElementById('model-state').textContent='Menunggu hasil ekstraksi model'; document.getElementById('model-fallback').classList.remove('hidden');
-    }
+
     function renderThree(){
-      if (!three.ready) return;
+      if (!three.ready && three.renderer) three.ready=true;
+      if (!three.renderer) return;
       const loop=()=>{
         three.frame=requestAnimationFrame(loop);
-        if (three.autoRotate && three.motor) three.motor.rotation.y+=.005;
-        three.controls?.update(); three.renderer?.render(three.scene,three.camera);
-      }; loop();
+        if (three.autoRotate && three.motor) three.motor.rotation.y+=.0045;
+        three.controls?.update();
+        three.renderer?.render(three.scene,three.camera);
+      };
+      if (!three.frame) loop();
     }
-    function resizeThree(){ if(!three.ready) return; const canvas=document.getElementById('three-canvas'); const w=canvas.clientWidth||600, h=canvas.clientHeight||520; three.camera.aspect=w/h; three.camera.updateProjectionMatrix(); three.renderer.setSize(w,h,false); }
-    function resetModel(){ if(!three.ready) return; three.camera.position.set(4.6,2.7,5.7); three.controls.target.set(0,.5,0); three.controls.update(); }
-    function zoomModel(mult){ if(!three.ready) return; const dir=new three.THREE.Vector3().subVectors(three.camera.position,three.controls.target); dir.multiplyScalar(mult); const dist=dir.length(); if(dist>=2.2&&dist<=10) three.camera.position.copy(three.controls.target).add(dir); three.controls.update(); }
+    function resizeThree(){
+      if(!three.renderer) return;
+      const canvas=document.getElementById('three-canvas');
+      const w=canvas.clientWidth||600, h=canvas.clientHeight||520;
+      three.camera.aspect=w/h;
+      three.camera.updateProjectionMatrix();
+      three.renderer.setSize(w,h,false);
+    }
+    function resetModel(){
+      if(!three.renderer) return;
+      three.camera.position.set(4.6,2.5,5.7);
+      three.controls.target.set(0,.6,0);
+      three.controls.update();
+      if(three.motor) three.motor.rotation.set(0,0,0);
+    }
+    function zoomModel(mult){
+      if(!three.renderer) return;
+      const dir=new three.THREE.Vector3().subVectors(three.camera.position,three.controls.target);
+      dir.multiplyScalar(mult);
+      const dist=dir.length();
+      if(dist>=2.2&&dist<=10) three.camera.position.copy(three.controls.target).add(dir);
+      three.controls.update();
+    }
 
     /* =========================================================
        PROFILE + SETTINGS
